@@ -41,7 +41,18 @@ def test(task_id, task):
                 return False
     if task_id not in downloaded_tasks:
         downloaded_tasks.append(task_id)
-    tester = fairy.Tester(6)
+    num_games = 6
+    depth = int(task['time_control'][2])
+    game_time = task['time_control'][0]
+    if game_time >= 60:
+        num_games = 2
+    elif game_time >= 30:
+        num_games = 4
+    elif game_time >= 10:
+        num_games = 6
+    if 0 < depth <= 10:
+        num_games = 12
+    tester = fairy.Tester(num_games)
     result = tester.test_multi(weight, engine,
                       int(task['time_control'][2]),
                       int(task['time_control'][0]*1000),
