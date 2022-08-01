@@ -185,6 +185,9 @@ class EngineMatch:
             #     output_count = 0
             # bestmove, ponder = e.go(depth=9)
             with h:
+                if 'string' in h.info:
+                    if 'classical' in h.info['string']:
+                        raise Exception("Failed loading NNUE")
                 if 1 in h.info["score"]:
                     # check for stalemate, checkmate and variant ending
                     if not h.info["pv"] and bestmove == "(none)":

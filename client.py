@@ -11,14 +11,16 @@ def rand_str(length=4):
     return ''.join(random.sample('abcdefghijklmnopqrstuvwxyz0123456789', length))
 
 
+program_version = "1.0.1"
 current_task = ""
 downloaded_tasks = []
 thread_test = None
 client_id = rand_str(8)
+need_update = False
 
 
 def test(task_id, task):
-    global thread_test
+    global thread_test, need_update
     engine, weight = "", ""
     print(f"开始测试: {task_id}")
     if task['engine_url']:
@@ -53,12 +55,20 @@ def test(task_id, task):
     if 0 < depth <= 10:
         num_games = 12
     tester = fairy.Tester(num_games)
-    result = tester.test_multi(weight, engine,
-                      int(task['time_control'][2]),
-                      int(task['time_control'][0]*1000),
-                      int(task['time_control'][1]*1000), thread_count=mp.cpu_count())
-    result = client_helper.upload_result(task_id, result['win'], result['draw'], result['lose'])
-    print("测试完成: ", result)
+    try:
+        result = tester.test_multi(weight, engine,
+                          int(task['time_control'][2]),
+                          int(task['time_control'][0]*1000),
+                          int(task['time_control'][1]*1000), thread_count=mp.cpu_count())
+        result = client_helper.upload_result(task_id, result['win'], result['draw'], result['lose'])
+        if result == "ver":
+            print(f"版本不一致，请更新版本")
+            thread_test = None
+            need_update = True
+            return False
+        print("测试完成: ", result)
+    except Exception as e:
+        print("测试失败: ", repr(e))
     thread_test = None
     return True
 
@@ -72,8 +82,15 @@ if __name__ == "__main__":
         try:
             if thread_test is not None:
                 continue
+            if need_update:
+                exit(0)
             task = client_helper.get_task(client_id)
             if task is None or task["task"] is None:
+                continue
+            if "program_version" in task and task["program_version"] != program_version:
+                print("版本不一致，请更新版本")
+                need_update = True
+                exit(0)
                 continue
             task_id = task["id"]
             task = task["task"]
