@@ -1,5 +1,5 @@
 import time
-
+import multiprocessing as mp
 import requests
 
 DEBUG = False
@@ -8,9 +8,9 @@ if DEBUG:
     HOST = "http://127.0.0.1:5003"
 
 
-def get_task():
+def get_task(client_id):
     try:
-        rep = requests.get(HOST + "/get_task")
+        rep = requests.get(HOST + "/get_task?client_id=" + client_id + "&core_count=" + str(mp.cpu_count()))
         info = rep.json()
         return info
     except Exception as e:

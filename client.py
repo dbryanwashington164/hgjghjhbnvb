@@ -1,13 +1,20 @@
 import sys
 import time
 import threading
+import random
 import fairy
 import client_helper
+import multiprocessing as mp
+
+
+def rand_str(length=4):
+    return ''.join(random.sample('abcdefghijklmnopqrstuvwxyz0123456789', length))
 
 
 current_task = ""
 downloaded_tasks = []
 thread_test = None
+client_id = rand_str(8)
 
 
 def test(task_id, task):
@@ -38,7 +45,7 @@ def test(task_id, task):
     result = tester.test_multi(weight, engine,
                       int(task['time_control'][2]),
                       int(task['time_control'][0]*1000),
-                      int(task['time_control'][1]*1000))
+                      int(task['time_control'][1]*1000), thread_count=mp.cpu_count())
     result = client_helper.upload_result(task_id, result['win'], result['draw'], result['lose'])
     print("测试完成: ", result)
     thread_test = None
@@ -54,7 +61,7 @@ if __name__ == "__main__":
         try:
             if thread_test is not None:
                 continue
-            task = client_helper.get_task()
+            task = client_helper.get_task(client_id)
             if task is None or task["task"] is None:
                 continue
             task_id = task["id"]
