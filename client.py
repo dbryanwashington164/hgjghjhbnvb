@@ -6,16 +6,17 @@ import client_helper
 
 
 current_task = ""
+downloaded_tasks = []
 thread_test = None
 
 
-def test(task_id, task, skip_download=False):
+def test(task_id, task):
     global thread_test
     engine, weight = "", ""
     print(f"开始测试: {task_id}")
     if task['engine_url']:
         engine = "engine_" + task_id
-        if not skip_download:
+        if task_id not in downloaded_tasks:
             print(f"下载引擎: {task['engine_url']}")
             result = client_helper.download_file_with_trail(task['engine_url'], "engine_" + task_id)
             print(f"下载结果: {result}")
@@ -24,14 +25,15 @@ def test(task_id, task, skip_download=False):
                 return False
     if task['weight_url']:
         weight = "xiangqi-" + task_id + ".nnue"
-        if not skip_download:
+        if task_id not in downloaded_tasks:
             print(f"下载权重: {task['weight_url']}")
             result = client_helper.download_file_with_trail(task['weight_url'], "xiangqi-" + task_id + ".nnue")
             print(f"下载结果: {result}")
             if not result:
                 thread_test = None
                 return False
-
+    if task_id not in downloaded_tasks:
+        downloaded_tasks.append(task_id)
     tester = fairy.Tester(6)
     result = tester.test_multi(weight, engine,
                       int(task['time_control'][2]),
@@ -59,11 +61,11 @@ if __name__ == "__main__":
             task = task["task"]
             if current_task == task_id:
                 if thread_test is None:
-                    thread_test = threading.Thread(target=test, args=(task_id, task, True))
+                    thread_test = threading.Thread(target=test, args=(task_id, task))
                     thread_test.setDaemon(True)
                     thread_test.start()
             else:
-                thread_test = threading.Thread(target=test, args=(task_id, task, False))
+                thread_test = threading.Thread(target=test, args=(task_id, task))
                 thread_test.setDaemon(True)
                 thread_test.start()
                 current_task = task_id
