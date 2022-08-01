@@ -60,7 +60,7 @@ def test(task_id, task):
                           int(task['time_control'][2]),
                           int(task['time_control'][0]*1000),
                           int(task['time_control'][1]*1000), thread_count=mp.cpu_count())
-        result = client_helper.upload_result(task_id, result['win'], result['draw'], result['lose'])
+        result = client_helper.upload_result(task_id, program_version, result['win'], result['draw'], result['lose'])
         if result == "ver":
             print(f"版本不一致，请更新版本")
             thread_test = None

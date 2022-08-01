@@ -18,9 +18,10 @@ def get_task(client_id):
         return None
 
 
-def upload_result(task_id, win, draw, lose):
+def upload_result(task_id, program_version, win, draw, lose):
     try:
-        rep = requests.post(HOST + "/upload_result", data={"task_id": task_id, "win": win, "draw": draw, "lose": lose})
+        rep = requests.post(HOST + "/upload_result", data={"task_id": task_id, "program_version": program_version,
+                                                           "win": win, "draw": draw, "lose": lose})
         info = rep.text
         return info
     except Exception as e:
