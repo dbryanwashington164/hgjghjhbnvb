@@ -10,7 +10,7 @@ from stat_util import get_elo
 from variantfishtest import EngineMatch
 
 
-base_engine = "./fsf801"
+base_engine = "./fsf803"
 if os.name == 'nt':
     base_engine += ".exe"
 

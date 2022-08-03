@@ -11,7 +11,7 @@ def rand_str(length=4):
     return ''.join(random.sample('abcdefghijklmnopqrstuvwxyz0123456789', length))
 
 
-program_version = "1.0.1"
+program_version = "1.0.2"
 current_task = ""
 downloaded_tasks = []
 thread_test = None
