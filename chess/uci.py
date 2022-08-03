@@ -630,7 +630,7 @@ class PopenProcess(object):
 
     def spawn(self, engine):
         self.engine = engine
-        self.process = subprocess.Popen(self.command, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=1, universal_newlines=True)
+        self.process = subprocess.Popen(self.command, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=1, universal_newlines=True, encoding="gb2312")
         self._receiving_thread.start()
 
     def _receiving_thread_target(self):
