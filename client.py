@@ -11,7 +11,7 @@ def rand_str(length=4):
     return ''.join(random.sample('abcdefghijklmnopqrstuvwxyz0123456789', length))
 
 
-program_version = "1.0.2"
+program_version = "1.0.3"
 current_task = ""
 downloaded_tasks = []
 thread_test = None
@@ -22,27 +22,56 @@ need_update = False
 def test(task_id, task):
     global thread_test, need_update
     engine, weight = "", ""
+    baseline_engine, baseline_weight = "", ""
     print(f"开始测试: {task_id}")
     if task['engine_url']:
-        engine = "engine_" + task_id
-        if task_id not in downloaded_tasks:
+        file_id = task['weight_url'].split("/")[-1].split(".")[0].split("_")[-1]
+        engine = "engine_" + file_id
+        if engine not in downloaded_tasks:
             print(f"下载引擎: {task['engine_url']}")
-            result = client_helper.download_file_with_trail(task['engine_url'], "engine_" + task_id)
+            result = client_helper.download_file_with_trail(task['engine_url'], engine)
             print(f"下载结果: {result}")
             if not result:
                 thread_test = None
                 return False
+            if engine not in downloaded_tasks:
+                downloaded_tasks.append(engine)
     if task['weight_url']:
-        weight = "xiangqi-" + task_id + ".nnue"
-        if task_id not in downloaded_tasks:
+        file_id = task['weight_url'].split("/")[-1].split(".")[0].split("_")[-1]
+        weight = "xiangqi-" + file_id + ".nnue"
+        if weight not in downloaded_tasks:
             print(f"下载权重: {task['weight_url']}")
-            result = client_helper.download_file_with_trail(task['weight_url'], "xiangqi-" + task_id + ".nnue")
+            result = client_helper.download_file_with_trail(task['weight_url'], weight)
             print(f"下载结果: {result}")
             if not result:
                 thread_test = None
                 return False
-    if task_id not in downloaded_tasks:
-        downloaded_tasks.append(task_id)
+            if weight not in downloaded_tasks:
+                downloaded_tasks.append(weight)
+    if task['baseline_engine_url']:
+        file_id = task['baseline_weight_url'].split("/")[-1].split(".")[0].split("_")[-1]
+        baseline_engine = "engine_" + file_id
+        if baseline_engine not in downloaded_tasks:
+            print(f"下载基准引擎: {task['baseline_engine_url']}")
+            result = client_helper.download_file_with_trail(task['baseline_engine_url'], baseline_engine)
+            print(f"下载结果: {result}")
+            if not result:
+                thread_test = None
+                return False
+            if baseline_engine not in downloaded_tasks:
+                downloaded_tasks.append(baseline_engine)
+    if task['baseline_weight_url']:
+        file_id = task['baseline_weight_url'].split("/")[-1].split(".")[0].split("_")[-1]
+        baseline_weight = "xiangqi-" + file_id + ".nnue"
+        if baseline_weight not in downloaded_tasks:
+            print(f"下载基准权重: {task['baseline_weight_url']}")
+            result = client_helper.download_file_with_trail(task['baseline_weight_url'], baseline_weight)
+            print(f"下载结果: {result}")
+            if not result:
+                thread_test = None
+                return False
+            if baseline_weight not in downloaded_tasks:
+                downloaded_tasks.append(baseline_weight)
     num_games = 6
     depth = int(task['time_control'][2])
     game_time = task['time_control'][0]
