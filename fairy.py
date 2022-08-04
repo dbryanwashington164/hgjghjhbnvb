@@ -56,7 +56,7 @@ class Tester():
                 return
             if os.name != 'nt':
                 os.system(f"chmod +x {engine}")
-                os.system(f"chmod +x {base_engine}")
+                os.system(f"chmod +x {baseline_engine}")
             match = EngineMatch(engine, baseline_engine,
                                 {"EvalFile": f"{weight}", "Hash": hash},
                                 {"EvalFile": f"{baseline_weight}", "Hash": hash},
