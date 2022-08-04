@@ -54,7 +54,6 @@ class Tester():
             if not os.path.exists(f"{weight}") or not os.path.exists(baseline_weight):
                 print("Weight File Not Exist")
                 return
-            print(engine, weight, base_engine, baseline)
             if os.name != 'nt':
                 os.system(f"chmod +x {engine}")
                 os.system(f"chmod +x {base_engine}")
