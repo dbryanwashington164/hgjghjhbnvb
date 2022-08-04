@@ -52,7 +52,7 @@ class Tester():
             if depth is not None and depth <= 0:
                 depth = None
             if not os.path.exists(f"{weight}") or not os.path.exists(baseline_weight):
-                print("File Not Exist")
+                print("Weight File Not Exist")
                 return
             print(engine, weight, base_engine, baseline)
             if os.name != 'nt':

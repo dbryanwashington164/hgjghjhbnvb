@@ -85,7 +85,7 @@ def test(task_id, task):
         num_games = 12
     tester = fairy.Tester(num_games)
     try:
-        result = tester.test_multi(weight, engine,
+        result = tester.test_multi(weight, engine, baseline_weight, baseline_engine,
                           int(task['time_control'][2]),
                           int(task['time_control'][0]*1000),
                           int(task['time_control'][1]*1000), thread_count=mp.cpu_count())
