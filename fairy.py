@@ -90,12 +90,12 @@ class Tester():
                 try:
                     elo, elo_range, los = get_elo((self.win, self.lose, self.draw))
                     los = los * 100
-                    print(f"{worker_id}|{name} vs {baseline} Total:", (self.win + self.lose + self.draw), "Win:",
+                    print(f"{worker_id}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Total:", (self.win + self.lose + self.draw), "Win:",
                           self.win, "Lose:", self.lose, "Draw:",
                           self.draw, "Elo:", round(elo, 1), "Elo_range:", round(elo_range, 1), "Los:", round(los, 1),
                           flush=True)
                 except:
-                    print(f"{worker_id}|{name} vs {baseline} Total:", (self.win + self.lose + self.draw), "Win:",
+                    print(f"{worker_id}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Total:", (self.win + self.lose + self.draw), "Win:",
                           self.win, "Lose:", self.lose, "Draw:",
                           self.draw, flush=True)
                 if self.win + self.lose + self.draw >= self.count and match_count % 2 == 0:
