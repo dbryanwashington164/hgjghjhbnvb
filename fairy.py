@@ -66,6 +66,8 @@ class Tester():
             name = weight.split("/")[-1].split(".")[0]
             match.init_engines()
             match.init_book()
+            if match.engines[0].process.dead or match.engines[1].process.dead:
+                raise Exception("Engine died")
             last_win = 0
             last_lose = 0
             last_draw = 0

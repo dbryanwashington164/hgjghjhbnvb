@@ -624,7 +624,7 @@ class MockProcess(object):
 class PopenProcess(object):
     def __init__(self, command):
         self.command = command
-
+        self.dead = False
         self._receiving_thread = threading.Thread(target=self._receiving_thread_target)
         self._receiving_thread.daemon = True
 
@@ -635,11 +635,15 @@ class PopenProcess(object):
 
     def _receiving_thread_target(self):
         while self.is_alive():
-            line = self.process.stdout.readline()
-            if not line:
-                continue
+            try:
+                line = self.process.stdout.readline()
+                if not line:
+                    continue
 
-            self.engine.on_line_received(line.rstrip())
+                self.engine.on_line_received(line.rstrip())
+            except Exception as e:
+                print(repr(e))
+                self.dead = True
 
         self.engine.on_terminated()
 
