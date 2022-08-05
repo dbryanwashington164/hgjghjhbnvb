@@ -25,7 +25,7 @@ def test(task_id, task):
     baseline_engine, baseline_weight = "", ""
     print(f"开始测试: {task_id}")
     if task['engine_url']:
-        file_id = task['weight_url'].split("/")[-1].split(".")[0].split("_")[-1]
+        file_id = task['engine_url'].split("/")[-1].split(".")[0].split("_")[-1]
         engine = "engine_" + file_id
         if engine not in downloaded_tasks:
             print(f"下载引擎: {task['engine_url']}")
