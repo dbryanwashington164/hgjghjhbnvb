@@ -49,7 +49,7 @@ def test(task_id, task):
             if weight not in downloaded_tasks:
                 downloaded_tasks.append(weight)
     if task['baseline_engine_url']:
-        file_id = task['baseline_weight_url'].split("/")[-1].split(".")[0].split("_")[-1]
+        file_id = task['baseline_engine_url'].split("/")[-1].split(".")[0].split("_")[-1]
         baseline_engine = "engine_" + file_id
         if baseline_engine not in downloaded_tasks:
             print(f"下载基准引擎: {task['baseline_engine_url']}")
