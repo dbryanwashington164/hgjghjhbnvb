@@ -33,9 +33,11 @@ class Tester():
         self.draw = 0
         self.working_workers = 0
         self.need_exit = False
+        self.started = False
 
     def test_single(self, weight, engine, baseline_weight, baseline_engine, depth=None, nodes=None, game_time=10000, inc_time=100, hash=128, worker_id=0):
         self.working_workers += 1
+        self.started = True
         print(f"Worker {worker_id} started.")
         try:
             if not engine and not weight and not baseline_engine and not baseline_weight:
@@ -119,6 +121,8 @@ class Tester():
             thread_list.append(thread)
         total = self.win + self.lose + self.draw
         while total < self.count and not self.need_exit:
+            if self.started and self.working_workers == 0:
+                break
             total = self.win + self.lose + self.draw
             time.sleep(0.1)
         elo, elo_range, los = 0, 0, 50
