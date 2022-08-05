@@ -17,6 +17,8 @@ downloaded_tasks = []
 thread_test = None
 client_id = rand_str(8)
 need_update = False
+default_engine = ""
+default_weight = ""
 
 
 def test(task_id, task):
@@ -87,6 +89,7 @@ def test(task_id, task):
     try:
         result = tester.test_multi(weight, engine, baseline_weight, baseline_engine,
                           int(task['time_control'][2]),
+                          int(task['nodes']),
                           int(task['time_control'][0]*1000),
                           int(task['time_control'][1]*1000), thread_count=mp.cpu_count())
         result = client_helper.upload_result(task_id, program_version, result['win'], result['draw'], result['lose'])

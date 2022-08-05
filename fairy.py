@@ -19,10 +19,10 @@ def get_latest_baseline():
     return f"xiangqi-{weights[0]}"
 
 
-base_engine = "./fsf803"
+base_engine = "./baseline_engine"
 if os.name == 'nt':
     base_engine += ".exe"
-base_weight = f"baselines/{get_latest_baseline()}.nnue"
+base_weight = f"xiangqi-baseline.nnue"
 
 
 class Tester():
@@ -34,7 +34,7 @@ class Tester():
         self.working_workers = 0
         self.need_exit = False
 
-    def test_single(self, weight, engine, baseline_weight, baseline_engine, depth=None, game_time=10000, inc_time=100, hash=128, worker_id=0):
+    def test_single(self, weight, engine, baseline_weight, baseline_engine, depth=None, nodes=None, game_time=10000, inc_time=100, hash=128, worker_id=0):
         self.working_workers += 1
         print(f"Worker {worker_id} started.")
         try:
@@ -51,6 +51,8 @@ class Tester():
                 baseline_weight = base_weight
             if depth is not None and depth <= 0:
                 depth = None
+            if nodes is not None and nodes < 0:
+                nodes = None
             if not os.path.exists(f"{weight}") or not os.path.exists(baseline_weight):
                 print("Weight File Not Exist")
                 return
@@ -60,7 +62,7 @@ class Tester():
             match = EngineMatch(engine, baseline_engine,
                                 {"EvalFile": f"{weight}", "Hash": hash},
                                 {"EvalFile": f"{baseline_weight}", "Hash": hash},
-                                50000, depth=depth, gtime=game_time, inctime=inc_time)
+                                50000, depth=depth, nodes=nodes, gtime=game_time, inctime=inc_time)
             name = weight.split("/")[-1].split(".")[0]
             match.init_engines()
             match.init_book()
@@ -105,11 +107,11 @@ class Tester():
         self.working_workers -= 1
         print(f"Worker {worker_id} exited.")
 
-    def test_multi(self, weight, engine, baseline_weight, baseline_engine, depth=None, game_time=10000, inc_time=100, hash=256, thread_count=2):
+    def test_multi(self, weight, engine, baseline_weight, baseline_engine, depth=None, nodes=None, game_time=10000, inc_time=100, hash=256, thread_count=2):
         print(f"Start testing {weight}@{engine} with baseline {baseline_weight}@{baseline_engine} on {thread_count} threads")
         thread_list = []
         for i in range(thread_count):
-            thread = threading.Thread(target=self.test_single, args=(weight, engine, baseline_weight, baseline_engine, depth, game_time, inc_time, hash, i))
+            thread = threading.Thread(target=self.test_single, args=(weight, engine, baseline_weight, baseline_engine, depth, nodes, game_time, inc_time, hash, i))
             thread.setDaemon(True)
             thread.start()
             thread_list.append(thread)

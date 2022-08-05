@@ -35,7 +35,7 @@ class EngineMatch:
     #
 
 
-    def __init__(self, engine1, engine2, e1_options, e2_options, max_games, depth=9, gtime=10000, inctime=20):
+    def __init__(self, engine1, engine2, e1_options, e2_options, max_games, depth=9, gtime=10000, inctime=20, nodes=20000):
         self.parser = argparse.ArgumentParser()
         # self.parser.add_argument("engine1", help="absolute or relative path to first UCI engine", type=str)
         # self.parser.add_argument("engine2", help="absolute or relative path to second UCI engine", type=str)
@@ -63,6 +63,7 @@ class EngineMatch:
         self.depth = depth
         self.time = gtime
         self.inc = inctime
+        self.nodes = nodes
         self.max_games = max_games
         self.verbosity = 0
         self.variants = ["xiangqi"]
@@ -175,7 +176,7 @@ class EngineMatch:
             # print("position fen " + pos + " moves " + " ".join(self.bestmoves))
             if e.chess_db:
                 e.chess_db_pos = pos.replace("fen ", "") + " moves " + " ".join(self.bestmoves)
-            bestmove, ponder = e.go(depth=self.depth, wtime=self.wt, btime=self.bt, winc=self.inc, binc=self.inc)
+            bestmove, ponder = e.go(depth=self.depth, nodes=self.nodes, wtime=self.wt, btime=self.bt, winc=self.inc, binc=self.inc)
             move_count += 1
             if move_count > 300:
                 return DRAW
