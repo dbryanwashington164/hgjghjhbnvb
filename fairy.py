@@ -41,14 +41,14 @@ class Tester():
             if not engine and not weight and not baseline_engine and not baseline_weight:
                 self.need_exit = True
                 raise Exception("No engine or weight specified")
-            if not engine:
-                engine = base_engine
-            if not weight:
-                weight = base_weight
             if not baseline_engine:
-                baseline_engine = base_engine
+                raise Exception("No baseline engine specified")
             if not baseline_weight:
-                baseline_weight = base_weight
+                raise Exception("No baseline weight specified")
+            if not engine:
+                engine = baseline_engine
+            if not weight:
+                weight = baseline_weight
             if depth is not None and depth <= 0:
                 depth = None
             if nodes is not None and nodes < 0:

@@ -17,8 +17,6 @@ downloaded_tasks = []
 thread_test = None
 client_id = rand_str(8)
 need_update = False
-default_engine = ""
-default_weight = ""
 
 
 def test(task_id, task):
