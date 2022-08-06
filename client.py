@@ -25,7 +25,7 @@ def test(task_id, task):
     baseline_engine, baseline_weight = "", ""
     print(f"开始测试: {task_id}")
     if task['engine_url']:
-        file_id = task['engine_url'].split("/")[-1].split(".")[0].split("_")[-1]
+        file_id = task['engine_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
         engine = "engine_" + file_id
         if engine not in downloaded_tasks:
             print(f"下载引擎: {task['engine_url']}")
@@ -37,7 +37,7 @@ def test(task_id, task):
             if engine not in downloaded_tasks:
                 downloaded_tasks.append(engine)
     if task['weight_url']:
-        file_id = task['weight_url'].split("/")[-1].split(".")[0].split("_")[-1]
+        file_id = task['weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
         weight = "xiangqi-" + file_id + ".nnue"
         if weight not in downloaded_tasks:
             print(f"下载权重: {task['weight_url']}")
@@ -49,7 +49,7 @@ def test(task_id, task):
             if weight not in downloaded_tasks:
                 downloaded_tasks.append(weight)
     if task['baseline_engine_url']:
-        file_id = task['baseline_engine_url'].split("/")[-1].split(".")[0].split("_")[-1]
+        file_id = task['baseline_engine_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
         baseline_engine = "engine_" + file_id
         if baseline_engine not in downloaded_tasks:
             print(f"下载基准引擎: {task['baseline_engine_url']}")
@@ -61,7 +61,7 @@ def test(task_id, task):
             if baseline_engine not in downloaded_tasks:
                 downloaded_tasks.append(baseline_engine)
     if task['baseline_weight_url']:
-        file_id = task['baseline_weight_url'].split("/")[-1].split(".")[0].split("_")[-1]
+        file_id = task['baseline_weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
         baseline_weight = "xiangqi-" + file_id + ".nnue"
         if baseline_weight not in downloaded_tasks:
             print(f"下载基准权重: {task['baseline_weight_url']}")
