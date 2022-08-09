@@ -107,7 +107,7 @@ def heartbeat_loop():
     count = 0
     while thread_test is not None:
         count += 1
-        if count % 30 * 5 == 0:
+        if count % 45 * 5 == 0:
             client_helper.get_task(client_id)
             count = 0
         time.sleep(0.2)
@@ -118,15 +118,15 @@ def start_testing(task_id, task):
     thread_test = threading.Thread(target=test, args=(task_id, task))
     thread_test.setDaemon(True)
     thread_test.start()
-    thread_heartbeat = threading.Thread(target=heartbeat_loop)
-    thread_heartbeat.setDaemon(True)
-    thread_heartbeat.start()
+    # thread_heartbeat = threading.Thread(target=heartbeat_loop)
+    # thread_heartbeat.setDaemon(True)
+    # thread_heartbeat.start()
 
 
 if __name__ == "__main__":
     while True:
         if thread_test is None:
-            time.sleep(5)
+            time.sleep(12)
         else:
             time.sleep(1)
         try:
