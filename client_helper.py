@@ -3,7 +3,7 @@ import multiprocessing as mp
 import requests
 
 DEBUG = False
-HOST = "http://test.stockfishxq.com"
+HOST = "http://train2.stockfishxq.com:2086"
 if DEBUG:
     HOST = "http://127.0.0.1:5003"
 
