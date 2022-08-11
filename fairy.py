@@ -57,7 +57,7 @@ class Tester():
                 depth = None
             if nodes is not None and nodes < 0:
                 nodes = None
-            if not os.path.exists(f"{weight}") or not os.path.exists(baseline_weight):
+            if not os.path.exists(weight) or not os.path.exists(baseline_weight):
                 print("Weight File Not Exist")
                 return
             if os.name != 'nt':
@@ -107,6 +107,8 @@ class Tester():
                         self.ptnml[3] += 1
                     elif res == "win" and first_result == "win":
                         self.ptnml[4] += 1
+                    else:
+                        print(f"Err res:{res} first_result:{first_result}")
                 if res == "win":
                     self.win += 1
                 elif res == "lose":
@@ -116,12 +118,12 @@ class Tester():
                 try:
                     elo, elo_range, los = get_elo((self.win, self.lose, self.draw))
                     los = los * 100
-                    print(f"{worker_id}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Total:", (self.win + self.lose + self.draw), "Win:",
+                    print(f"{worker_id}|{match_count}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Total:", (self.win + self.lose + self.draw), "Win:",
                           self.win, "Lose:", self.lose, "Draw:",
                           self.draw, "Elo:", round(elo, 1), "Elo_range:", round(elo_range, 1), "Los:", round(los, 1),
                           flush=True)
                 except:
-                    print(f"{worker_id}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Total:", (self.win + self.lose + self.draw), "Win:",
+                    print(f"{worker_id}|{match_count}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Total:", (self.win + self.lose + self.draw), "Win:",
                           self.win, "Lose:", self.lose, "Draw:",
                           self.draw, flush=True)
                 if self.win + self.lose + self.draw >= self.count and match_count % 2 == 0:
@@ -140,11 +142,12 @@ class Tester():
             thread.start()
             thread_list.append(thread)
         total = self.win + self.lose + self.draw
-        while total < self.count and not self.need_exit:
+        while not self.need_exit:
             if self.started and self.working_workers == 0:
                 break
             total = self.win + self.lose + self.draw
             time.sleep(0.1)
+        total = self.win + self.lose + self.draw
         elo, elo_range, los = 0, 0, 50
         if self.lose > 0 and self.draw > 0:
             elo, elo_range, los = get_elo((self.win, self.lose, self.draw))
@@ -165,10 +168,10 @@ class Tester():
 
 if __name__ == "__main__":
     # print(get_elo((103,120,352)))
-    baseline = get_latest_baseline()
-    tester = Tester(3000)
+    tester = Tester(8)
     # result = tester.test_multi("./nnue/xiangqi-712.nnue", game_time=10000, inc_time=100, thread_count=6)
-    result = tester.test_multi(f"./baselines/{baseline}.nnue", game_time=10000, inc_time=100, thread_count=6)
+    result = tester.test_multi("xiangqi-xy.nnue", "807.exe", "xiangqi-xy.nnue", "807.exe", game_time=10000, inc_time=100, depth=9, thread_count=2)
+    print(result)
     # with open("test_sep.txt", "r") as f:
     #     tested_log = f.read()
     # results = []

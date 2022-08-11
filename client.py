@@ -124,6 +124,9 @@ def start_testing(task_id, task):
 
 
 if __name__ == "__main__":
+    result = client_helper.upload_result("ty5pef", program_version, [0, 0, 0], [0, 0, 0], [0,0,0,0,0])
+    print(result)
+    exit(9)
     while True:
         if thread_test is None:
             time.sleep(12)
