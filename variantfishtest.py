@@ -233,11 +233,12 @@ class EngineMatch:
             self.scores[res] += 1
         else:
             self.scores[1 - res] += 1
-        if self.verbosity > 1:
-            self.print_results()
-        elif self.verbosity > 0:
-            self.print_stats()
-        return self.scores
+        if res == DRAW:
+            return "draw"
+        elif res == WIN and white == 0 or res == LOSS and white == 1:
+            return "win"
+        else:
+            return "lose"
 
     def print_stats(self):
         """Print intermediate results."""

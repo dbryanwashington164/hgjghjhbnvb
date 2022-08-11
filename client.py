@@ -11,7 +11,7 @@ def rand_str(length=4):
     return ''.join(random.sample('abcdefghijklmnopqrstuvwxyz0123456789', length))
 
 
-program_version = "1.0.3"
+program_version = "1.0.4"
 current_task = ""
 downloaded_tasks = []
 thread_test = None
@@ -90,7 +90,7 @@ def test(task_id, task):
                           int(task['nodes']),
                           int(task['time_control'][0]*1000),
                           int(task['time_control'][1]*1000), thread_count=mp.cpu_count())
-        result = client_helper.upload_result(task_id, program_version, result['win'], result['draw'], result['lose'])
+        result = client_helper.upload_result(task_id, program_version, result["wdl"], result["fwdl"], result["ptnml"])
         if result == "ver":
             print(f"版本不一致，请更新版本")
             thread_test = None

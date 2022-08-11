@@ -31,6 +31,8 @@ class Tester():
         self.win = 0
         self.lose = 0
         self.draw = 0
+        self.first_stats = [0, 0, 0]
+        self.ptnml = [0, 0, 0, 0, 0]
         self.working_workers = 0
         self.need_exit = False
         self.started = False
@@ -70,11 +72,9 @@ class Tester():
             match.init_book()
             if match.engines[0].process.dead or match.engines[1].process.dead:
                 raise Exception("Engine died")
-            last_win = 0
-            last_lose = 0
-            last_draw = 0
             pos = "fen " + random.choice(match.fens) if match.fens else "startpos"
             match_count = 0
+            first_result = ""
             while True:
                 if self.win + self.lose + self.draw + self.working_workers - 1 >= self.count and match_count % 2 == 0:
                     break
@@ -84,15 +84,35 @@ class Tester():
                 match.init_game()
                 if match_count % 2 == 1:
                     res = match.process_game(0, 1, pos)
+                    first_result = res
+                    if res == "win":
+                        self.first_stats[0] += 1
+                    elif res == "lose":
+                        self.first_stats[2] += 1
+                    elif res == "draw":
+                        self.first_stats[1] += 1
                 else:
                     res = match.process_game(1, 0, pos)
-                win, lose, draw = res
-                self.win += win - last_win
-                self.lose += lose - last_lose
-                self.draw += draw - last_draw
-                last_win = win
-                last_lose = lose
-                last_draw = draw
+                    if res == "lose" and first_result == "lose":
+                        self.ptnml[0] += 1
+                    elif res == "lose" and first_result == "draw" or \
+                            res == "draw" and first_result == "lose":
+                        self.ptnml[1] += 1
+                    elif res == "draw" and first_result == "draw" or \
+                            res == "win" and first_result == "lose" or \
+                            res == "lose" and first_result == "win":
+                        self.ptnml[2] += 1
+                    elif res == "win" and first_result == "draw" or \
+                            res == "draw" and first_result == "win":
+                        self.ptnml[3] += 1
+                    elif res == "win" and first_result == "win":
+                        self.ptnml[4] += 1
+                if res == "win":
+                    self.win += 1
+                elif res == "lose":
+                    self.lose += 1
+                elif res == "draw":
+                    self.draw += 1
                 try:
                     elo, elo_range, los = get_elo((self.win, self.lose, self.draw))
                     los = los * 100
@@ -134,6 +154,9 @@ class Tester():
             "win": self.win,
             "lose": self.lose,
             "draw": self.draw,
+            "wdl": (self.win, self.draw, self.lose),
+            "fwdl": self.first_stats,
+            "ptnml": self.ptnml,
             "elo": elo,
             "elo_range": elo_range,
             "los": los
