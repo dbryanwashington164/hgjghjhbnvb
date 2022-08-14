@@ -8,6 +8,7 @@ import concurrent.futures
 import random
 from stat_util import get_elo
 from variantfishtest import EngineMatch
+import client
 
 
 def get_latest_baseline():
@@ -126,6 +127,7 @@ class Tester():
                     print(f"{worker_id}|{match_count}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Total:", (self.win + self.lose + self.draw), "Win:",
                           self.win, "Lose:", self.lose, "Draw:",
                           self.draw, flush=True)
+                client.last_output_time = time.time()
                 if self.win + self.lose + self.draw >= self.count and match_count % 2 == 0:
                     break
         except Exception as e:

@@ -17,6 +17,7 @@ downloaded_tasks = []
 thread_test = None
 client_id = rand_str(8)
 need_update = False
+last_output_time = time.time()
 
 
 def test(task_id, task):
@@ -75,13 +76,14 @@ def test(task_id, task):
     num_games = 6
     depth = int(task['time_control'][2])
     game_time = task['time_control'][0]
+    nodes = task['nodes']
     if game_time >= 60:
         num_games = 2
     elif game_time >= 30:
         num_games = 4
     elif game_time >= 10:
         num_games = 6
-    if 0 < depth <= 10:
+    if 0 < depth <= 10 or 0 < nodes <= 50000:
         num_games = 12
     tester = fairy.Tester(num_games)
     try:
@@ -124,11 +126,14 @@ def start_testing(task_id, task):
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     while True:
         if thread_test is None:
             time.sleep(12)
         else:
             time.sleep(1)
+            if time.time() - start_time > 1000 or time.time() - last_output_time > 3000:
+                thread_test = None
         try:
             if thread_test is not None:
                 continue
@@ -146,8 +151,10 @@ if __name__ == "__main__":
             task = task["task"]
             if current_task == task_id:
                 if thread_test is None:
+                    start_time = time.time()
                     start_testing(task_id, task)
             else:
+                start_time = time.time()
                 start_testing(task_id, task)
                 current_task = task_id
         except Exception as e:
