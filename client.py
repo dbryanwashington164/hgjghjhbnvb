@@ -134,6 +134,8 @@ if __name__ == "__main__":
             time.sleep(1)
             if time.time() - start_time > 1000 or time.time() - last_output_time > 3000:
                 thread_test = None
+                start_time = time.time()
+                last_output_time = time.time()
         try:
             if thread_test is not None:
                 continue
