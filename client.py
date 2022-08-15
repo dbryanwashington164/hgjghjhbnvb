@@ -1,3 +1,4 @@
+import os.path
 import sys
 import time
 import threading
@@ -35,6 +36,10 @@ def test(task_id, task):
             if not result:
                 thread_test = None
                 return False
+            if os.path.getsize(engine) < 1024 * 100:
+                print("引擎文件错误")
+                thread_test = None
+                return False
             if engine not in downloaded_tasks:
                 downloaded_tasks.append(engine)
     if task['weight_url']:
@@ -45,6 +50,10 @@ def test(task_id, task):
             result = client_helper.download_file_with_trail(task['weight_url'], weight)
             print(f"下载结果: {result}")
             if not result:
+                thread_test = None
+                return False
+            if os.path.getsize(weight) < 1024 * 100:
+                print("权重文件错误")
                 thread_test = None
                 return False
             if weight not in downloaded_tasks:
@@ -59,6 +68,10 @@ def test(task_id, task):
             if not result:
                 thread_test = None
                 return False
+            if os.path.getsize(baseline_engine) < 1024 * 100:
+                print("基准引擎文件错误")
+                thread_test = None
+                return False
             if baseline_engine not in downloaded_tasks:
                 downloaded_tasks.append(baseline_engine)
     if task['baseline_weight_url']:
@@ -69,6 +82,10 @@ def test(task_id, task):
             result = client_helper.download_file_with_trail(task['baseline_weight_url'], baseline_weight)
             print(f"下载结果: {result}")
             if not result:
+                thread_test = None
+                return False
+            if os.path.getsize(baseline_weight) < 1024 * 100:
+                print("基准权重文件错误")
                 thread_test = None
                 return False
             if baseline_weight not in downloaded_tasks:
