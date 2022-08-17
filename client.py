@@ -144,6 +144,7 @@ def start_testing(task_id, task):
 
 if __name__ == "__main__":
     start_time = time.time()
+    test_count = 0
     while True:
         if thread_test is None:
             time.sleep(12)
@@ -158,6 +159,10 @@ if __name__ == "__main__":
                 continue
             if need_update:
                 exit(0)
+            if test_count > 10:
+                need_update = True
+                print("防止内存溢出，自动重启")
+                exit(0)
             task = client_helper.get_task(client_id)
             if task is None or task["task"] is None:
                 continue
@@ -171,9 +176,11 @@ if __name__ == "__main__":
             if current_task == task_id:
                 if thread_test is None:
                     start_time = time.time()
+                    test_count += 1
                     start_testing(task_id, task)
             else:
                 start_time = time.time()
+                test_count += 1
                 start_testing(task_id, task)
                 current_task = task_id
         except Exception as e:
