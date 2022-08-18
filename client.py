@@ -38,6 +38,14 @@ def test(task_id, task):
                 return False
             if os.path.getsize(engine) < 1024 * 100:
                 print("引擎文件错误")
+                try:
+                    with open(engine, "r", encoding="utf-8") as f:
+                        text = f.read()
+                        if "activity" in text:
+                            print("网盘超限，等待")
+                            time.sleep(60)
+                except Exception as e:
+                    print(repr(e))
                 thread_test = None
                 return False
             if engine not in downloaded_tasks:
