@@ -37,6 +37,7 @@ class Tester():
         self.working_workers = 0
         self.need_exit = False
         self.started = False
+        self.dead_threads = []
 
     def test_single(self, weight, engine, baseline_weight, baseline_engine, depth=None, nodes=None, game_time=10000, inc_time=100, hash=128, worker_id=0):
         self.working_workers += 1
@@ -132,6 +133,8 @@ class Tester():
                     break
         except Exception as e:
             print(repr(e))
+            if "terminated" in repr(e):
+                self.dead_threads.append(worker_id)
         self.working_workers -= 1
         print(f"Worker {worker_id} exited.")
 
@@ -147,7 +150,14 @@ class Tester():
         while not self.need_exit:
             if self.started and self.working_workers == 0:
                 break
-            total = self.win + self.lose + self.draw
+            for died in self.dead_threads.copy():
+                thread = threading.Thread(target=self.test_single, args=(
+                    weight, engine, baseline_weight, baseline_engine, depth, nodes, game_time, inc_time, hash,
+                    died))
+                thread.setDaemon(True)
+                thread.start()
+                thread_list.append(thread)
+                self.dead_threads.remove(died)
             time.sleep(0.1)
         total = self.win + self.lose + self.draw
         elo, elo_range, los = 0, 0, 50
