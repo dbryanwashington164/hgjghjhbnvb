@@ -207,8 +207,8 @@ if __name__ == "__main__":
                 exit(0)
                 continue
             task_data = select_task(data["tasks"])
-            task_id = data["task_id"]
-            task = data["task"]
+            task_id = task_data["task_id"]
+            task = task_data["task"]
             start_time = time.time()
             test_count += 1
             start_testing(task_id, task)
