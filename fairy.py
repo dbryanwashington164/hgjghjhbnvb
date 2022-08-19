@@ -39,7 +39,13 @@ class Tester():
         self.started = False
         self.dead_threads = []
 
-    def test_single(self, weight, engine, baseline_weight, baseline_engine, depth=None, nodes=None, game_time=10000, inc_time=100, hash=128, worker_id=0):
+    def test_single(self, weight, engine, baseline_weight, baseline_engine, depth=None, nodes=None,
+                    game_time=10000, inc_time=100, hash=128, worker_id=0, uci_ops=None, baseline_uci_ops=None,
+                    draw_move_limit=-1, draw_score_limit=-1, win_move_limit=-1, win_score_limit=-1):
+        if baseline_uci_ops is None:
+            baseline_uci_ops = {}
+        if uci_ops is None:
+            uci_ops = {}
         self.working_workers += 1
         self.started = True
         print(f"Worker {worker_id} started.")
@@ -65,10 +71,24 @@ class Tester():
             if os.name != 'nt':
                 os.system(f"chmod +x {engine}")
                 os.system(f"chmod +x {baseline_engine}")
+            uci_options = {
+                "Hash": hash,
+                "Threads": 1,
+                "EvalFile": weight
+            }
+            uci_options.update(uci_ops)
+            baseline_uci_options = {
+                "Hash": hash,
+                "Threads": 1,
+                "EvalFile": baseline_weight
+            }
+            baseline_uci_options.update(baseline_uci_ops)
             match = EngineMatch(engine, baseline_engine,
-                                {"EvalFile": f"{weight}", "Hash": hash},
-                                {"EvalFile": f"{baseline_weight}", "Hash": hash},
-                                50000, depth=depth, nodes=nodes, gtime=game_time, inctime=inc_time)
+                                uci_options,
+                                baseline_uci_options,
+                                50000, depth=depth, nodes=nodes, gtime=game_time, inctime=inc_time,
+                                draw_move_limit=draw_move_limit, draw_score_limit=draw_score_limit,
+                                win_move_limit=win_move_limit, win_score_limit=win_score_limit)
             name = weight.split("/")[-1].split(".")[0]
             match.init_engines()
             match.init_book()
@@ -120,12 +140,14 @@ class Tester():
                 try:
                     elo, elo_range, los = get_elo((self.win, self.lose, self.draw))
                     los = los * 100
-                    print(f"{worker_id}|{match_count}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Total:", (self.win + self.lose + self.draw), "Win:",
+                    print(f"{worker_id}|{match_count}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Total:",
+                          (self.win + self.lose + self.draw), "Win:",
                           self.win, "Lose:", self.lose, "Draw:",
                           self.draw, "Elo:", round(elo, 1), "Elo_range:", round(elo_range, 1), "Los:", round(los, 1),
                           flush=True)
                 except:
-                    print(f"{worker_id}|{match_count}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Total:", (self.win + self.lose + self.draw), "Win:",
+                    print(f"{worker_id}|{match_count}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Total:",
+                          (self.win + self.lose + self.draw), "Win:",
                           self.win, "Lose:", self.lose, "Draw:",
                           self.draw, flush=True)
                 client.last_output_time = time.time()
@@ -138,11 +160,19 @@ class Tester():
         self.working_workers -= 1
         print(f"Worker {worker_id} exited.")
 
-    def test_multi(self, weight, engine, baseline_weight, baseline_engine, depth=None, nodes=None, game_time=10000, inc_time=100, hash=256, thread_count=2):
-        print(f"Start testing {weight}@{engine} with baseline {baseline_weight}@{baseline_engine} on {thread_count} threads")
+    def test_multi(self, weight, engine, baseline_weight, baseline_engine, depth=None, nodes=None,
+                   game_time=10000, inc_time=100, hash=256, thread_count=2, uci_ops=None, baseline_uci_ops=None,
+                   draw_move_limit=-1, draw_score_limit=-1, win_move_limit=-1, win_score_limit=-1):
+        print(
+            f"Start testing {weight}@{engine} with baseline {baseline_weight}@{baseline_engine} on {thread_count} threads")
         thread_list = []
         for i in range(thread_count):
-            thread = threading.Thread(target=self.test_single, args=(weight, engine, baseline_weight, baseline_engine, depth, nodes, game_time, inc_time, hash, i))
+            thread = threading.Thread(target=self.test_single, args=(weight, engine,
+                                                                     baseline_weight, baseline_engine,
+                                                                     depth, nodes, game_time, inc_time, hash, i,
+                                                                     uci_ops, baseline_uci_ops,
+                                                                     draw_move_limit, draw_score_limit,
+                                                                     win_move_limit, win_score_limit))
             thread.setDaemon(True)
             thread.start()
             thread_list.append(thread)
@@ -182,7 +212,8 @@ if __name__ == "__main__":
     # print(get_elo((103,120,352)))
     tester = Tester(8)
     # result = tester.test_multi("./nnue/xiangqi-712.nnue", game_time=10000, inc_time=100, thread_count=6)
-    result = tester.test_multi("xiangqi-xy.nnue", "807.exe", "xiangqi-xy.nnue", "807.exe", game_time=10000, inc_time=100, depth=9, thread_count=2)
+    result = tester.test_multi("xiangqi-xy.nnue", "807.exe", "xiangqi-xy.nnue", "807.exe", game_time=10000,
+                               inc_time=100, depth=9, thread_count=2)
     print(result)
     # with open("test_sep.txt", "r") as f:
     #     tested_log = f.read()

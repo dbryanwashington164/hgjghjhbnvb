@@ -12,9 +12,8 @@ def rand_str(length=4):
     return ''.join(random.sample('abcdefghijklmnopqrstuvwxyz0123456789', length))
 
 
-program_version = "1.0.4"
-current_task = ""
-downloaded_tasks = []
+program_version = "1.0.5"
+downloaded_file_list = []
 thread_test = None
 client_id = rand_str(8)
 need_update = False
@@ -29,7 +28,7 @@ def test(task_id, task):
     if task['engine_url']:
         file_id = task['engine_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
         engine = "engine_" + file_id
-        if engine not in downloaded_tasks:
+        if engine not in downloaded_file_list:
             print(f"下载引擎: {task['engine_url']}")
             result = client_helper.download_file_with_trail(task['engine_url'], engine)
             print(f"下载结果: {result}")
@@ -48,12 +47,12 @@ def test(task_id, task):
                     print(repr(e))
                 thread_test = None
                 return False
-            if engine not in downloaded_tasks:
-                downloaded_tasks.append(engine)
+            if engine not in downloaded_file_list:
+                downloaded_file_list.append(engine)
     if task['weight_url']:
         file_id = task['weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
         weight = "xiangqi-" + file_id + ".nnue"
-        if weight not in downloaded_tasks:
+        if weight not in downloaded_file_list:
             print(f"下载权重: {task['weight_url']}")
             result = client_helper.download_file_with_trail(task['weight_url'], weight)
             print(f"下载结果: {result}")
@@ -64,12 +63,12 @@ def test(task_id, task):
                 print("权重文件错误")
                 thread_test = None
                 return False
-            if weight not in downloaded_tasks:
-                downloaded_tasks.append(weight)
+            if weight not in downloaded_file_list:
+                downloaded_file_list.append(weight)
     if task['baseline_engine_url']:
         file_id = task['baseline_engine_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
         baseline_engine = "engine_" + file_id
-        if baseline_engine not in downloaded_tasks:
+        if baseline_engine not in downloaded_file_list:
             print(f"下载基准引擎: {task['baseline_engine_url']}")
             result = client_helper.download_file_with_trail(task['baseline_engine_url'], baseline_engine)
             print(f"下载结果: {result}")
@@ -80,12 +79,12 @@ def test(task_id, task):
                 print("基准引擎文件错误")
                 thread_test = None
                 return False
-            if baseline_engine not in downloaded_tasks:
-                downloaded_tasks.append(baseline_engine)
+            if baseline_engine not in downloaded_file_list:
+                downloaded_file_list.append(baseline_engine)
     if task['baseline_weight_url']:
         file_id = task['baseline_weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
         baseline_weight = "xiangqi-" + file_id + ".nnue"
-        if baseline_weight not in downloaded_tasks:
+        if baseline_weight not in downloaded_file_list:
             print(f"下载基准权重: {task['baseline_weight_url']}")
             result = client_helper.download_file_with_trail(task['baseline_weight_url'], baseline_weight)
             print(f"下载结果: {result}")
@@ -96,8 +95,8 @@ def test(task_id, task):
                 print("基准权重文件错误")
                 thread_test = None
                 return False
-            if baseline_weight not in downloaded_tasks:
-                downloaded_tasks.append(baseline_weight)
+            if baseline_weight not in downloaded_file_list:
+                downloaded_file_list.append(baseline_weight)
     num_games = 6
     depth = int(task['time_control'][2])
     game_time = task['time_control'][0]
@@ -108,15 +107,24 @@ def test(task_id, task):
         num_games = 4
     elif game_time >= 10:
         num_games = 6
+    elif game_time >= 5:
+        num_games = 12
+    elif game_time >= 2.5:
+        num_games = 24
+    elif game_time >= 1.25:
+        num_games = 48
     if 0 < depth <= 10 or 0 < nodes <= 50000:
         num_games = 12
     tester = fairy.Tester(num_games)
     try:
         result = tester.test_multi(weight, engine, baseline_weight, baseline_engine,
-                          int(task['time_control'][2]),
-                          int(task['nodes']),
-                          int(task['time_control'][0]*1000),
-                          int(task['time_control'][1]*1000), thread_count=mp.cpu_count())
+                                   int(task['time_control'][2]),
+                                   int(task['nodes']),
+                                   int(task['time_control'][0] * 1000),
+                                   int(task['time_control'][1] * 1000), thread_count=mp.cpu_count(),
+                                   uci_ops=task['uci_options'], baseline_uci_ops=task['baseline_uci_options'],
+                                   draw_move_limit=task['draw_move_limit'], draw_score_limit=task['draw_score_limit'],
+                                   win_move_limit=task['win_move_limit'], win_score_limit=task['win_score_limit'])
         result = client_helper.upload_result(task_id, program_version, result["wdl"], result["fwdl"], result["ptnml"])
         if result == "ver":
             print(f"版本不一致，请更新版本")
@@ -135,7 +143,7 @@ def heartbeat_loop():
     while thread_test is not None:
         count += 1
         if count % 58 * 5 == 0:
-            client_helper.get_task(client_id)
+            client_helper.heartbeat(client_id)
             count = 0
         time.sleep(0.2)
 
@@ -148,6 +156,25 @@ def start_testing(task_id, task):
     thread_heartbeat = threading.Thread(target=heartbeat_loop)
     thread_heartbeat.setDaemon(True)
     thread_heartbeat.start()
+
+
+def get_name(url):
+    return url.split("/")[-1]
+
+
+def select_task(task_list):
+    downloaded_tasks = []
+    for item in task_list:
+        task = item["task"]
+        if get_name(task["engine_url"]) in downloaded_file_list and \
+            get_name(task["weight_url"]) in downloaded_file_list and \
+                get_name(task["baseline_engine_url"]) in downloaded_file_list and \
+                get_name(task["baseline_weight_url"]) in downloaded_file_list:
+            downloaded_tasks.append(item)
+    if len(downloaded_tasks) > 0:
+        return random.choice(downloaded_tasks)
+    else:
+        return random.choice(task_list)
 
 
 if __name__ == "__main__":
@@ -171,25 +198,19 @@ if __name__ == "__main__":
                 need_update = True
                 print("防止内存溢出，自动重启")
                 exit(0)
-            task = client_helper.get_task(client_id)
-            if task is None or task["task"] is None:
+            data = client_helper.get_tasks(client_id)
+            if data is None:
                 continue
-            if "program_version" in task and task["program_version"] != program_version:
+            if "program_version" in data and data["program_version"] != program_version:
                 print("版本不一致，请更新版本")
                 need_update = True
                 exit(0)
                 continue
-            task_id = task["id"]
-            task = task["task"]
-            if current_task == task_id:
-                if thread_test is None:
-                    start_time = time.time()
-                    test_count += 1
-                    start_testing(task_id, task)
-            else:
-                start_time = time.time()
-                test_count += 1
-                start_testing(task_id, task)
-                current_task = task_id
+            task_data = select_task(data["tasks"])
+            task_id = data["task_id"]
+            task = data["task"]
+            start_time = time.time()
+            test_count += 1
+            start_testing(task_id, task)
         except Exception as e:
             print(repr(e))

@@ -8,9 +8,19 @@ if DEBUG:
     HOST = "http://127.0.0.1:5003"
 
 
-def get_task(client_id):
+def heartbeat(client_id):
     try:
-        rep = requests.get(HOST + "/get_task?client_id=" + client_id + "&core_count=" + str(mp.cpu_count()))
+        rep = requests.get(HOST + "/heartbeat?client_id=" + client_id + "&core_count=" + str(mp.cpu_count()))
+        info = rep.json()
+        return info
+    except Exception as e:
+        print("发送心跳失败:", repr(e))
+        return None
+
+
+def get_tasks(client_id):
+    try:
+        rep = requests.get(HOST + "/get_tasks?password=ftclient!&client_id=" + client_id + "&core_count=" + str(mp.cpu_count()))
         info = rep.json()
         return info
     except Exception as e:

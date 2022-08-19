@@ -32,10 +32,9 @@ def print_scores(scores):
 
 class EngineMatch:
     """Compare two UCI engines by running an engine match."""
-    #
 
-
-    def __init__(self, engine1, engine2, e1_options, e2_options, max_games, depth=9, gtime=10000, inctime=20, nodes=20000):
+    def __init__(self, engine1, engine2, e1_options, e2_options, max_games, depth=9, gtime=10000, inctime=20, nodes=20000,
+                 draw_move_limit=-1, draw_score_limit=-1, win_move_limit=-1, win_score_limit=-1):
         self.parser = argparse.ArgumentParser()
         # self.parser.add_argument("engine1", help="absolute or relative path to first UCI engine", type=str)
         # self.parser.add_argument("engine2", help="absolute or relative path to second UCI engine", type=str)
@@ -74,6 +73,12 @@ class EngineMatch:
         self.out = open(os.path.abspath(self.log), "a") if self.log else sys.stdout
         self.book = True
         self.force_stop = False
+        self.draw_move_limit = -1
+        self.draw_score_limit = -1
+        self.win_move_limit = -1
+        self.win_score_limit = -1
+        self.draw_move_count = 0
+        self.win_move_count = 0
 
         self.wt = None
         self.bt = None
@@ -207,6 +212,21 @@ class EngineMatch:
                     # check for mate in 1
                     elif h.info["score"][1].mate == 1:
                         return WIN if index == white else LOSS
+                    elif self.draw_move_limit != -1 and abs(h.info["score"][1].cp) <= self.draw_score_limit:
+                        self.draw_move_count += 1
+                        if self.draw_move_count >= self.draw_move_limit:
+                            return DRAW
+                    elif self.win_move_limit != -1 and h.info["score"][1].cp >= self.win_score_limit:
+                        self.win_move_count += 1
+                        if self.win_move_count >= self.win_move_limit:
+                            return LOSS if index == white else WIN
+                    elif self.win_move_limit != -1 and h.info["score"][1].cp <= -self.win_score_limit:
+                        self.win_move_count += 1
+                        if self.win_move_count >= self.win_move_limit:
+                            return WIN if index == white else LOSS
+                    else:
+                        self.draw_move_count = 0
+                        self.win_move_count = 0
                     # adjust time remaining on clock
                     if index == white:
                         self.wt += self.inc - h.info.get("time", 0)
