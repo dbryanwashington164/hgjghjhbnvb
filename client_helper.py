@@ -36,7 +36,6 @@ def register_task(client_id, task_id):
             "core_count": mp.cpu_count()
         })
         info = rep.json()
-        print(rep.text)
         return info
     except Exception as e:
         print("注册任务失败:", repr(e))
