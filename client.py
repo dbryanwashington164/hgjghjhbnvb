@@ -166,6 +166,7 @@ def get_name(url):
 
 def select_task(task_list):
     downloaded_tasks = []
+    spsa_tasks = []
     for item in task_list:
         task = item["task"]
         if get_name(task["engine_url"]) in downloaded_file_list and \
@@ -173,7 +174,11 @@ def select_task(task_list):
                 get_name(task["baseline_engine_url"]) in downloaded_file_list and \
                 get_name(task["baseline_weight_url"]) in downloaded_file_list:
             downloaded_tasks.append(item)
-    if len(downloaded_tasks) > 0:
+        if task["type"] == "spsa":
+            spsa_tasks.append(item)
+    if len(spsa_tasks) > 0:
+        return random.choice(spsa_tasks)
+    elif len(downloaded_tasks) > 0:
         return random.choice(downloaded_tasks)
     else:
         return random.choice(task_list)
