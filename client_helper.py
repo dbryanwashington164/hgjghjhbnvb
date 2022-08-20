@@ -30,8 +30,13 @@ def get_tasks(client_id):
 
 def register_task(client_id, task_id):
     try:
-        rep = requests.get(HOST + f"/register_task?task_id={task_id}client_id={client_id}&core_count={mp.cpu_count()}")
+        rep = requests.post(HOST + f"/register_task", json={
+            "task_id": task_id,
+            "client_id": client_id,
+            "core_count": mp.cpu_count()
+        })
         info = rep.json()
+        print(rep.text)
         return info
     except Exception as e:
         print("注册任务失败:", repr(e))
