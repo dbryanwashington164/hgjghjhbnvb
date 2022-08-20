@@ -28,6 +28,16 @@ def get_tasks(client_id):
         return None
 
 
+def register_task(client_id, task_id):
+    try:
+        rep = requests.get(HOST + f"/register_task?task_id={task_id}client_id={client_id}&core_count={mp.cpu_count()}")
+        info = rep.json()
+        return info
+    except Exception as e:
+        print("注册任务失败:", repr(e))
+        return None
+
+
 def upload_result(task_id, program_version, wdl, fwdl, ptnml):
     try:
         rep = requests.post(HOST + "/upload_result", json={"task_id": task_id, "program_version": program_version,

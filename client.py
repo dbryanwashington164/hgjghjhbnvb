@@ -12,7 +12,7 @@ def rand_str(length=4):
     return ''.join(random.sample('abcdefghijklmnopqrstuvwxyz0123456789', length))
 
 
-program_version = "1.0.5"
+program_version = "1.0.6"
 downloaded_file_list = []
 thread_test = None
 client_id = rand_str(8)
@@ -115,6 +115,8 @@ def test(task_id, task):
         num_games = 48
     if 0 < depth <= 10 or 0 < nodes <= 50000:
         num_games = 12
+    if task["type"] == "sprt":
+        num_games = 2
     tester = fairy.Tester(num_games)
     try:
         result = tester.test_multi(weight, engine, baseline_weight, baseline_engine,
@@ -209,8 +211,10 @@ if __name__ == "__main__":
             task_data = select_task(data["tasks"])
             task_id = task_data["task_id"]
             task = task_data["task"]
-            start_time = time.time()
-            test_count += 1
-            start_testing(task_id, task)
+            result = client_helper.register_task(client_id, task_id)
+            if result["code"] == 0:
+                test_count += 1
+                start_time = time.time()
+                start_testing(task_id, task)
         except Exception as e:
             print(repr(e))
