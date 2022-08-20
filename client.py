@@ -180,8 +180,10 @@ def select_task(task_list):
         return random.choice(spsa_tasks)
     elif len(downloaded_tasks) > 0:
         return random.choice(downloaded_tasks)
-    else:
+    elif len(task_list) > 0:
         return random.choice(task_list)
+    else:
+        return None
 
 
 if __name__ == "__main__":
@@ -214,6 +216,8 @@ if __name__ == "__main__":
                 exit(0)
                 continue
             task_data = select_task(data["tasks"])
+            if task_data is None:
+                continue
             task_id = task_data["task_id"]
             task = task_data["task"]
             result = client_helper.register_task(client_id, task_id)
