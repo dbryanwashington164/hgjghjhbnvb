@@ -12,7 +12,7 @@ def rand_str(length=4):
     return ''.join(random.sample('abcdefghijklmnopqrstuvwxyz0123456789', length))
 
 
-program_version = "1.0.6"
+program_version = "1.0.7"
 downloaded_file_list = []
 thread_test = None
 client_id = rand_str(8)
