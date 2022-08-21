@@ -205,7 +205,7 @@ if __name__ == "__main__":
                 continue
             if need_update:
                 exit(0)
-            if test_count > 10:
+            if test_count > 30:
                 need_update = True
                 print("防止内存溢出，自动重启")
                 exit(0)
