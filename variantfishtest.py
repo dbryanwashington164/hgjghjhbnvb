@@ -183,13 +183,8 @@ class EngineMatch:
                 e.chess_db_pos = pos.replace("fen ", "") + " moves " + " ".join(self.bestmoves)
             bestmove, ponder = e.go(depth=self.depth, nodes=self.nodes, wtime=self.wt, btime=self.bt, winc=self.inc, binc=self.inc)
             move_count += 1
-            if move_count > 300:
+            if move_count > 400:
                 return DRAW
-            # output_count += 1
-            # if output_count % 10 == 0:
-            #     print("go", bestmove, ponder)
-            #     output_count = 0
-            # bestmove, ponder = e.go(depth=9)
             with h:
                 if 'string' in h.info:
                     if 'classical' in h.info['string']:

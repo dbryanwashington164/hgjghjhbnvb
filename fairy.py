@@ -38,6 +38,29 @@ class Tester():
         self.need_exit = False
         self.started = False
         self.dead_threads = []
+        self.task_queue = []
+        self.task_results = {}
+        self.lock = threading.Lock()
+        self.fens = []
+
+        book_file = os.path.abspath(
+            os.path.join(os.path.dirname(os.path.realpath(__file__)), "books", "xiangqi.epd"))
+        if os.path.exists(book_file):
+            f = open(book_file)
+            for line in f:
+                self.fens.append(line.rstrip(';\n'))
+            f.close()
+
+        for i in range(count // 2):
+            fen = random.choice(self.fens)
+            self.fens.remove(fen)
+            fen = "fen " + fen
+            self.task_queue.append((fen, 0, 1))
+            self.task_queue.append((fen, 1, 0))
+            self.task_results[fen] = {
+                0: "",
+                1: ""
+            }
 
     def test_single(self, weight, engine, baseline_weight, baseline_engine, depth=None, nodes=None,
                     game_time=10000, inc_time=100, hash=128, worker_id=0, uci_ops=None, baseline_uci_ops=None,
@@ -89,70 +112,26 @@ class Tester():
                                 50000, depth=depth, nodes=nodes, gtime=game_time, inctime=inc_time,
                                 draw_move_limit=draw_move_limit, draw_score_limit=draw_score_limit,
                                 win_move_limit=win_move_limit, win_score_limit=win_score_limit)
-            name = weight.split("/")[-1].split(".")[0]
             match.init_engines()
             match.init_book()
             if match.engines[0].process.dead or match.engines[1].process.dead:
                 raise Exception("Engine died")
-            pos = "fen " + random.choice(match.fens) if match.fens else "startpos"
-            match_count = 0
-            first_result = ""
             while True:
-                if self.win + self.lose + self.draw + self.working_workers - 1 >= self.count and match_count % 2 == 0:
+                self.lock.acquire()
+                if len(self.task_queue) == 0:
+                    self.lock.release()
                     break
-                match_count += 1
-                if match_count % 2 == 1:
-                    pos = "fen " + random.choice(match.fens) if match.fens else "startpos"
+                task = self.task_queue.pop(0)
+                self.lock.release()
+                fen = task[0]
                 match.init_game()
-                if match_count % 2 == 1:
-                    res = match.process_game(0, 1, pos)
-                    first_result = res
-                    if res == "win":
-                        self.first_stats[0] += 1
-                    elif res == "lose":
-                        self.first_stats[2] += 1
-                    elif res == "draw":
-                        self.first_stats[1] += 1
-                else:
-                    res = match.process_game(1, 0, pos)
-                    if res == "lose" and first_result == "lose":
-                        self.ptnml[0] += 1
-                    elif res == "lose" and first_result == "draw" or \
-                            res == "draw" and first_result == "lose":
-                        self.ptnml[1] += 1
-                    elif res == "draw" and first_result == "draw" or \
-                            res == "win" and first_result == "lose" or \
-                            res == "lose" and first_result == "win":
-                        self.ptnml[2] += 1
-                    elif res == "win" and first_result == "draw" or \
-                            res == "draw" and first_result == "win":
-                        self.ptnml[3] += 1
-                    elif res == "win" and first_result == "win":
-                        self.ptnml[4] += 1
-                    else:
-                        print(f"Err res:{res} first_result:{first_result}")
-                if res == "win":
-                    self.win += 1
-                elif res == "lose":
-                    self.lose += 1
-                elif res == "draw":
-                    self.draw += 1
-                try:
-                    elo, elo_range, los = get_elo((self.win, self.lose, self.draw))
-                    los = los * 100
-                    print(f"{worker_id}|{match_count}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Total:",
-                          (self.win + self.lose + self.draw), "Win:",
-                          self.win, "Lose:", self.lose, "Draw:",
-                          self.draw, "Elo:", round(elo, 1), "Elo_range:", round(elo_range, 1), "Los:", round(los, 1),
-                          flush=True)
-                except:
-                    print(f"{worker_id}|{match_count}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Total:",
-                          (self.win + self.lose + self.draw), "Win:",
-                          self.win, "Lose:", self.lose, "Draw:",
-                          self.draw, flush=True)
+                res = match.process_game(task[1], task[2], fen)
+                self.lock.acquire()
+                self.task_results[fen][task[1]] = res
+                self.lock.release()
+                print(f"Worker {worker_id}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Finished {fen} {'Red' if task[1] == 0 else 'Black'}: {res}")
+                print(f"{len(self.task_queue)} tasks left")
                 client.last_output_time = time.time()
-                if self.win + self.lose + self.draw >= self.count and match_count % 2 == 0:
-                    break
         except Exception as e:
             print(repr(e))
             if "terminated" in repr(e):
@@ -176,7 +155,7 @@ class Tester():
             thread.setDaemon(True)
             thread.start()
             thread_list.append(thread)
-        total = self.win + self.lose + self.draw
+
         while not self.need_exit:
             if self.started and self.working_workers == 0:
                 break
@@ -189,6 +168,41 @@ class Tester():
                 thread_list.append(thread)
                 self.dead_threads.remove(died)
             time.sleep(0.1)
+        for task_id in self.task_results:
+            result = self.task_results[task_id]
+            for i in range(2):
+                res = result[i]
+                if res == "win":
+                    self.win += 1
+                elif res == "lose":
+                    self.lose += 1
+                elif res == "draw":
+                    self.draw += 1
+                if i == 0:
+                    if res == "win":
+                        self.first_stats[0] += 1
+                    elif res == "lose":
+                        self.first_stats[2] += 1
+                    elif res == "draw":
+                        self.first_stats[1] += 1
+            res = result[1]
+            first_result = result[0]
+            if res == "lose" and first_result == "lose":
+                self.ptnml[0] += 1
+            elif res == "lose" and first_result == "draw" or \
+                    res == "draw" and first_result == "lose":
+                self.ptnml[1] += 1
+            elif res == "draw" and first_result == "draw" or \
+                    res == "win" and first_result == "lose" or \
+                    res == "lose" and first_result == "win":
+                self.ptnml[2] += 1
+            elif res == "win" and first_result == "draw" or \
+                    res == "draw" and first_result == "win":
+                self.ptnml[3] += 1
+            elif res == "win" and first_result == "win":
+                self.ptnml[4] += 1
+            else:
+                print(f"Err res:{res} first_result:{first_result}")
         total = self.win + self.lose + self.draw
         elo, elo_range, los = 0, 0, 50
         if self.lose > 0 and self.draw > 0:
@@ -212,7 +226,7 @@ if __name__ == "__main__":
     # print(get_elo((103,120,352)))
     tester = Tester(8)
     # result = tester.test_multi("./nnue/xiangqi-712.nnue", game_time=10000, inc_time=100, thread_count=6)
-    result = tester.test_multi("xiangqi-xy.nnue", "807.exe", "xiangqi-xy.nnue", "807.exe", game_time=10000,
+    result = tester.test_multi("xiangqi-xy.nnue", "819.exe", "xiangqi-xy.nnue", "807.exe", game_time=10000,
                                inc_time=100, depth=9, thread_count=2)
     print(result)
     # with open("test_sep.txt", "r") as f:

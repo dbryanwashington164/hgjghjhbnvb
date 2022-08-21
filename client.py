@@ -116,7 +116,9 @@ def test(task_id, task):
     if 0 < depth <= 10 or 0 < nodes <= 50000:
         num_games = 12
     if task["type"] == "spsa":
-        num_games = 2
+        num_games = task["num_games"]
+    if num_games % 2 != 0:
+        num_games += 1
     tester = fairy.Tester(num_games)
     try:
         result = tester.test_multi(weight, engine, baseline_weight, baseline_engine,
