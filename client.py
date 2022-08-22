@@ -61,6 +61,14 @@ def test(task_id, task):
                 return False
             if os.path.getsize(weight) < 1024 * 100:
                 print("权重文件错误")
+                try:
+                    with open(engine, "r", encoding="utf-8") as f:
+                        text = f.read()
+                        if "activity" in text:
+                            print("网盘超限，等待")
+                            time.sleep(60)
+                except Exception as e:
+                    print(repr(e))
                 thread_test = None
                 return False
             if weight not in downloaded_file_list:
@@ -77,6 +85,14 @@ def test(task_id, task):
                 return False
             if os.path.getsize(baseline_engine) < 1024 * 100:
                 print("基准引擎文件错误")
+                try:
+                    with open(engine, "r", encoding="utf-8") as f:
+                        text = f.read()
+                        if "activity" in text:
+                            print("网盘超限，等待")
+                            time.sleep(60)
+                except Exception as e:
+                    print(repr(e))
                 thread_test = None
                 return False
             if baseline_engine not in downloaded_file_list:
@@ -93,6 +109,14 @@ def test(task_id, task):
                 return False
             if os.path.getsize(baseline_weight) < 1024 * 100:
                 print("基准权重文件错误")
+                try:
+                    with open(engine, "r", encoding="utf-8") as f:
+                        text = f.read()
+                        if "activity" in text:
+                            print("网盘超限，等待")
+                            time.sleep(60)
+                except Exception as e:
+                    print(repr(e))
                 thread_test = None
                 return False
             if baseline_weight not in downloaded_file_list:
