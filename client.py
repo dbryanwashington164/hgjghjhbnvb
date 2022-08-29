@@ -126,30 +126,31 @@ def test(task_id, task):
     game_time = task['time_control'][0]
     nodes = task['nodes']
     if game_time >= 60:
-        num_games = 2
+        num_games = mp.cpu_count()
     elif game_time >= 30:
-        num_games = 4
+        num_games = 2*mp.cpu_count()
     elif game_time >= 10:
-        num_games = 6
+        num_games = 3*mp.cpu_count()
     elif game_time >= 5:
-        num_games = 12
+        num_games = 6*mp.cpu_count()
     elif game_time >= 2.5:
-        num_games = 24
+        num_games = 12*mp.cpu_count()
     elif game_time >= 1.25:
-        num_games = 48
+        num_games = 24*mp.cpu_count()
     if 0 < depth <= 10 or 0 < nodes <= 50000:
-        num_games = 12
+        num_games = 6*mp.cpu_count()
     if task["type"] == "spsa":
         num_games = task["num_games"]
     if num_games % 2 != 0:
         num_games += 1
     tester = fairy.Tester(num_games)
     try:
+        threads_count = min(num_games, mp.cpu_count())
         result = tester.test_multi(weight, engine, baseline_weight, baseline_engine,
                                    int(task['time_control'][2]),
                                    int(task['nodes']),
                                    int(task['time_control'][0] * 1000),
-                                   int(task['time_control'][1] * 1000), thread_count=mp.cpu_count(),
+                                   int(task['time_control'][1] * 1000), thread_count=threads_count,
                                    uci_ops=task['uci_options'], baseline_uci_ops=task['baseline_uci_options'],
                                    draw_move_limit=task['draw_move_limit'], draw_score_limit=task['draw_score_limit'],
                                    win_move_limit=task['win_move_limit'], win_score_limit=task['win_score_limit'])
