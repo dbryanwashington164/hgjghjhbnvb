@@ -218,17 +218,22 @@ def select_task(task_list):
 
 
 if __name__ == "__main__":
+    text = "This is a worker, please don't ban me"
     start_time = time.time()
     test_count = 0
+    no_waiting = False
     while True:
-        if thread_test is None:
-            time.sleep(12)
+        if not no_waiting:
+            if thread_test is None:
+                time.sleep(12)
+            else:
+                time.sleep(1)
+                if time.time() - start_time > 1000 or time.time() - last_output_time > 3000:
+                    thread_test = None
+                    start_time = time.time()
+                    last_output_time = time.time()
         else:
-            time.sleep(1)
-            if time.time() - start_time > 1000 or time.time() - last_output_time > 3000:
-                thread_test = None
-                start_time = time.time()
-                last_output_time = time.time()
+            no_waiting = False
         try:
             if thread_test is not None:
                 continue
@@ -256,5 +261,7 @@ if __name__ == "__main__":
                 test_count += 1
                 start_time = time.time()
                 start_testing(task_id, task)
+            else:
+                no_waiting = True
         except Exception as e:
             print(repr(e))
