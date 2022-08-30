@@ -20,6 +20,15 @@ need_update = False
 last_output_time = time.time()
 
 
+def scan_existing_files():
+    global downloaded_file_list
+    downloaded_file_list = []
+    for file in os.listdir("./"):
+        if file.startswith("engine") or file.startswith("weight"):
+            if os.path.getsize(file) > 1024 * 100 and file not in downloaded_file_list:
+                downloaded_file_list.append(file)
+
+
 def test(task_id, task):
     global thread_test, need_update
     engine, weight = "", ""
@@ -218,7 +227,7 @@ def select_task(task_list):
 
 
 if __name__ == "__main__":
-    text = "This is a worker, please don't ban me"
+    scan_existing_files()
     start_time = time.time()
     test_count = 0
     no_waiting = False
@@ -239,10 +248,10 @@ if __name__ == "__main__":
                 continue
             if need_update:
                 exit(0)
-            if test_count > 30:
-                need_update = True
-                print("防止内存溢出，自动重启")
-                exit(0)
+            # if test_count > 30:
+            #     need_update = True
+            #     print("防止内存溢出，自动重启")
+            #     exit(0)
             data = client_helper.get_tasks(client_id)
             if data is None:
                 continue
