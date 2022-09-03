@@ -219,7 +219,7 @@ def task_manage_loop():
         task_data = select_task(data["tasks"])
         if task_data is None:
             print("没有可用任务")
-            time.sleep(10)
+            time.sleep(30)
             continue
         task_id = task_data["task_id"]
         task = task_data["task"]
