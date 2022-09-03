@@ -180,7 +180,7 @@ class Tester():
                 task_id = task["task_id"]
                 order = task["order"]
                 match.init_game()
-                res = match.process_game(order, order, fen)
+                res = match.process_game(order, 1 - order, fen)
                 self.lock.acquire()
                 self.task_results[task_id][fen][order] = res
                 self.lock.release()
