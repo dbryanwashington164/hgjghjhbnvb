@@ -137,20 +137,32 @@ def select_task(task_list):
 
 
 def add_to_task(task_id, task):
-    file_id = task['engine_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
-    engine = "engine_" + file_id
-    file_id = task['weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
-    weight = "xiangqi-" + file_id + ".nnue"
-    file_id = task['baseline_engine_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
-    baseline_engine = "engine_" + file_id
-    file_id = task['baseline_weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
-    baseline_weight = "xiangqi-" + file_id + ".nnue"
+    if task['engine_url']:
+        file_id = task['engine_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
+        engine = "engine_" + file_id
+    else:
+        engine = ""
+    if task["weight_url"]:
+        file_id = task['weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
+        weight = "xiangqi-" + file_id + ".nnue"
+    else:
+        weight = ""
+    if task["baseline_engine_url"]:
+        file_id = task['baseline_engine_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
+        baseline_engine = "engine_" + file_id
+    else:
+        baseline_engine = ""
+    if task["baseline_weight_url"]:
+        file_id = task['baseline_weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
+        baseline_weight = "xiangqi-" + file_id + ".nnue"
+    else:
+        baseline_weight = ""
 
     # for debug
-    # engine = "807.exe"
-    # weight = "xiangqi-xy.nnue"
-    # baseline_engine = "807.exe"
-    # baseline_weight = "xiangqi-xy.nnue"
+    # engine = "pikafish-avx2.exe"
+    # weight = "pikafish.nnue"
+    # baseline_engine = "pikafish-avx2.exe"
+    # baseline_weight = "pikafish.nnue"
 
     num_games = 6
     depth = int(task['time_control'][2])
