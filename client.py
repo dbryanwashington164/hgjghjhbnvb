@@ -3,7 +3,7 @@ import sys
 import time
 import threading
 import random
-import fairy
+from fairy import Tester
 import client_helper
 import multiprocessing as mp
 
@@ -14,10 +14,12 @@ def rand_str(length=4):
 
 program_version = "1.0.7"
 downloaded_file_list = []
-thread_test = None
 client_id = rand_str(8)
 need_update = False
 last_output_time = time.time()
+task_queue = []
+tester: Tester = Tester()
+running = True
 
 
 def scan_existing_files():
@@ -29,11 +31,7 @@ def scan_existing_files():
                 downloaded_file_list.append(file)
 
 
-def test(task_id, task):
-    global thread_test, need_update
-    engine, weight = "", ""
-    baseline_engine, baseline_weight = "", ""
-    print(f"开始测试: {task_id}")
+def download_needed_file(task_id, task):
     if task['engine_url']:
         file_id = task['engine_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
         engine = "engine_" + file_id
@@ -42,19 +40,10 @@ def test(task_id, task):
             result = client_helper.download_file_with_trail(task['engine_url'], engine)
             print(f"下载结果: {result}")
             if not result:
-                thread_test = None
                 return False
             if os.path.getsize(engine) < 1024 * 100:
                 print("引擎文件错误")
-                try:
-                    with open(engine, "r", encoding="utf-8") as f:
-                        text = f.read()
-                        if "activity" in text:
-                            print("网盘超限，等待")
-                            time.sleep(60)
-                except Exception as e:
-                    print(repr(e))
-                thread_test = None
+                print("可能是网盘超限，等待")
                 return False
             if engine not in downloaded_file_list:
                 downloaded_file_list.append(engine)
@@ -66,19 +55,10 @@ def test(task_id, task):
             result = client_helper.download_file_with_trail(task['weight_url'], weight)
             print(f"下载结果: {result}")
             if not result:
-                thread_test = None
                 return False
             if os.path.getsize(weight) < 1024 * 100:
                 print("权重文件错误")
-                try:
-                    with open(engine, "r", encoding="utf-8") as f:
-                        text = f.read()
-                        if "activity" in text:
-                            print("网盘超限，等待")
-                            time.sleep(60)
-                except Exception as e:
-                    print(repr(e))
-                thread_test = None
+                print("可能是网盘超限，等待")
                 return False
             if weight not in downloaded_file_list:
                 downloaded_file_list.append(weight)
@@ -90,19 +70,10 @@ def test(task_id, task):
             result = client_helper.download_file_with_trail(task['baseline_engine_url'], baseline_engine)
             print(f"下载结果: {result}")
             if not result:
-                thread_test = None
                 return False
             if os.path.getsize(baseline_engine) < 1024 * 100:
                 print("基准引擎文件错误")
-                try:
-                    with open(engine, "r", encoding="utf-8") as f:
-                        text = f.read()
-                        if "activity" in text:
-                            print("网盘超限，等待")
-                            time.sleep(60)
-                except Exception as e:
-                    print(repr(e))
-                thread_test = None
+                print("可能是网盘超限，等待")
                 return False
             if baseline_engine not in downloaded_file_list:
                 downloaded_file_list.append(baseline_engine)
@@ -114,86 +85,24 @@ def test(task_id, task):
             result = client_helper.download_file_with_trail(task['baseline_weight_url'], baseline_weight)
             print(f"下载结果: {result}")
             if not result:
-                thread_test = None
                 return False
             if os.path.getsize(baseline_weight) < 1024 * 100:
                 print("基准权重文件错误")
-                try:
-                    with open(engine, "r", encoding="utf-8") as f:
-                        text = f.read()
-                        if "activity" in text:
-                            print("网盘超限，等待")
-                            time.sleep(60)
-                except Exception as e:
-                    print(repr(e))
-                thread_test = None
+                print("可能是网盘超限，等待")
                 return False
             if baseline_weight not in downloaded_file_list:
                 downloaded_file_list.append(baseline_weight)
-    num_games = 6
-    depth = int(task['time_control'][2])
-    game_time = task['time_control'][0]
-    nodes = task['nodes']
-    if game_time >= 60:
-        num_games = mp.cpu_count()
-    elif game_time >= 30:
-        num_games = 2*mp.cpu_count()
-    elif game_time >= 10:
-        num_games = 3*mp.cpu_count()
-    elif game_time >= 5:
-        num_games = 6*mp.cpu_count()
-    elif game_time >= 2.5:
-        num_games = 12*mp.cpu_count()
-    elif game_time >= 1.25:
-        num_games = 24*mp.cpu_count()
-    if 0 < depth <= 10 or 0 < nodes <= 50000:
-        num_games = 6*mp.cpu_count()
-    if task["type"] == "spsa":
-        num_games = task["num_games"]
-    if num_games % 2 != 0:
-        num_games += 1
-    tester = fairy.Tester(num_games)
-    try:
-        threads_count = min(num_games, mp.cpu_count())
-        result = tester.test_multi(weight, engine, baseline_weight, baseline_engine,
-                                   int(task['time_control'][2]),
-                                   int(task['nodes']),
-                                   int(task['time_control'][0] * 1000),
-                                   int(task['time_control'][1] * 1000), thread_count=threads_count,
-                                   uci_ops=task['uci_options'], baseline_uci_ops=task['baseline_uci_options'],
-                                   draw_move_limit=task['draw_move_limit'], draw_score_limit=task['draw_score_limit'],
-                                   win_move_limit=task['win_move_limit'], win_score_limit=task['win_score_limit'])
-        result = client_helper.upload_result(task_id, program_version, result["wdl"], result["fwdl"], result["ptnml"])
-        if result == "ver":
-            print(f"版本不一致，请更新版本")
-            thread_test = None
-            need_update = True
-            return False
-        print("测试完成: ", result)
-    except Exception as e:
-        print("测试失败: ", repr(e))
-    thread_test = None
     return True
 
 
-def heartbeat_loop():
-    count = 0
-    while thread_test is not None:
-        count += 1
-        if count % 58 * 5 == 0:
-            client_helper.heartbeat(client_id)
-            count = 0
-        time.sleep(0.2)
-
-
-def start_testing(task_id, task):
-    global thread_test
-    thread_test = threading.Thread(target=test, args=(task_id, task))
-    thread_test.setDaemon(True)
-    thread_test.start()
-    thread_heartbeat = threading.Thread(target=heartbeat_loop)
-    thread_heartbeat.setDaemon(True)
-    thread_heartbeat.start()
+# def heartbeat_loop():
+#     count = 0
+#     while thread_test is not None:
+#         count += 1
+#         if count % 58 * 5 == 0:
+#             client_helper.heartbeat(client_id)
+#             count = 0
+#         time.sleep(0.2)
 
 
 def get_name(url):
@@ -227,51 +136,175 @@ def select_task(task_list):
         return None
 
 
+def add_to_task(task_id, task):
+    file_id = task['engine_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
+    engine = "engine_" + file_id
+    file_id = task['weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
+    weight = "xiangqi-" + file_id + ".nnue"
+    file_id = task['baseline_engine_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
+    baseline_engine = "engine_" + file_id
+    file_id = task['baseline_weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
+    baseline_weight = "xiangqi-" + file_id + ".nnue"
+
+    # for debug
+    # engine = "807.exe"
+    # weight = "xiangqi-xy.nnue"
+    # baseline_engine = "807.exe"
+    # baseline_weight = "xiangqi-xy.nnue"
+
+    num_games = 6
+    depth = int(task['time_control'][2])
+    game_time = task['time_control'][0]
+    nodes = task['nodes']
+    if game_time >= 60:
+        num_games = mp.cpu_count()
+    elif game_time >= 30:
+        num_games = 2 * mp.cpu_count()
+    elif game_time >= 10:
+        num_games = 3 * mp.cpu_count()
+    elif game_time >= 5:
+        num_games = 6 * mp.cpu_count()
+    elif game_time >= 2.5:
+        num_games = 12 * mp.cpu_count()
+    elif game_time >= 1.25:
+        num_games = 24 * mp.cpu_count()
+    if 0 < depth <= 10 or 0 < nodes <= 50000:
+        num_games = 6 * mp.cpu_count()
+    if task["type"] == "spsa":
+        num_games = task["num_games"]
+    if num_games % 2 != 0:
+        num_games += 1
+
+    tester.add_task(task_id, weight, engine, baseline_weight, baseline_engine,
+                    int(task['time_control'][2]),
+                    int(task['nodes']),
+                    int(task['time_control'][0] * 1000),
+                    int(task['time_control'][1] * 1000),
+                    count=num_games,
+                    uci_ops=task['uci_options'], baseline_uci_ops=task['baseline_uci_options'],
+                    draw_move_limit=task['draw_move_limit'], draw_score_limit=task['draw_score_limit'],
+                    win_move_limit=task['win_move_limit'], win_score_limit=task['win_score_limit'])
+    print(f"添加 来自 {task_id} 的 {num_games} 个 {task['type']} 测试局面到队列成功")
+
+
+def task_manage_loop():
+    global running, tester
+    while running:
+        if len(tester.task_queue) >= mp.cpu_count():
+            time.sleep(0.2)
+            continue
+        print("队列中任务不足，开始获取任务")
+        data = client_helper.get_tasks(client_id)
+        if data is None:
+            continue
+        if "program_version" in data and data["program_version"] != program_version:
+            print("版本不一致，请更新版本")
+            running = False
+            exit(0)
+            continue
+        task_data = select_task(data["tasks"])
+        if task_data is None:
+            continue
+        task_id = task_data["task_id"]
+        task = task_data["task"]
+        if task["type"] == "spsa":
+            result = client_helper.register_task(client_id, task_id)
+        else:
+            result = {
+                "code": 0
+            }
+        if result["code"] == 0:
+            result = download_needed_file(task_id, task)
+            if result:
+                add_to_task(task_id, task)
+            else:
+                print("下载失败，等待 60s")
+                time.sleep(60)
+
+
+def result_waiting_loop():
+    global running
+    while running:
+        result_list = {}
+        for task_id in list(tester.task_results):
+            task_result = {
+                "task_id": task_id,
+                "wdl": [0, 0, 0],
+                "ptnml": [0, 0, 0, 0, 0],
+                "fwdl": [0, 0, 0],
+            }
+            results = tester.task_results[task_id]
+            for fen in results:
+                result = results[fen]
+                if not result[0] or not result[1]:
+                    continue
+                for i in range(2):
+                    res = result[i]
+                    if res == "win":
+                        task_result["wdl"][0] += 1
+                    elif res == "lose":
+                        task_result["wdl"][2] += 1
+                    elif res == "draw":
+                        task_result["wdl"][1] += 1
+                    if i == 0:
+                        if res == "win":
+                            task_result["fwdl"][0] += 1
+                        elif res == "lose":
+                            task_result["fwdl"][2] += 1
+                        elif res == "draw":
+                            task_result["fwdl"][1] += 1
+                res = result[1]
+                first_result = result[0]
+                if res == "lose" and first_result == "lose":
+                    task_result["ptnml"][0] += 1
+                elif res == "lose" and first_result == "draw" or \
+                        res == "draw" and first_result == "lose":
+                    task_result["ptnml"][1] += 1
+                elif res == "draw" and first_result == "draw" or \
+                        res == "win" and first_result == "lose" or \
+                        res == "lose" and first_result == "win":
+                    task_result["ptnml"][2] += 1
+                elif res == "win" and first_result == "draw" or \
+                        res == "draw" and first_result == "win":
+                    task_result["ptnml"][3] += 1
+                elif res == "win" and first_result == "win":
+                    task_result["ptnml"][4] += 1
+                else:
+                    print(f"Err res:{res} first_result:{first_result}")
+            if sum(task_result["wdl"]) > 0:
+                print(task_result)
+                if task_id not in result_list:
+                    result_list[task_id] = task_result
+                else:
+                    for i in range(3):
+                        result_list[task_id]["wdl"][i] += task_result["wdl"][i]
+                        result_list[task_id]["fwdl"][i] += task_result["fwdl"][i]
+                    for i in range(5):
+                        result_list[task_id]["ptnml"][i] += task_result["ptnml"][i]
+                tester.lock.acquire()
+                tester.task_results[task_id].pop(fen)
+                tester.lock.release()
+
+        if len(result_list) > 0:
+            for task_id in list(result_list):
+                result = result_list[task_id]
+                result = client_helper.upload_result(task_id, program_version, result["wdl"], result["fwdl"], result["ptnml"])
+                if result == "ver":
+                    print(f"版本不一致，请更新版本")
+                    running = False
+                else:
+                    print(f"上传 {task_id} 结果成功")
+                time.sleep(1)
+        time.sleep(10)
+
+
 if __name__ == "__main__":
     scan_existing_files()
     start_time = time.time()
     test_count = 0
     no_waiting = False
-    while True:
-        if not no_waiting:
-            if thread_test is None:
-                time.sleep(12)
-            else:
-                time.sleep(1)
-                if time.time() - start_time > 1000 or time.time() - last_output_time > 3000:
-                    thread_test = None
-                    start_time = time.time()
-                    last_output_time = time.time()
-        else:
-            no_waiting = False
-        try:
-            if thread_test is not None:
-                continue
-            if need_update:
-                exit(0)
-            # if test_count > 30:
-            #     need_update = True
-            #     print("防止内存溢出，自动重启")
-            #     exit(0)
-            data = client_helper.get_tasks(client_id)
-            if data is None:
-                continue
-            if "program_version" in data and data["program_version"] != program_version:
-                print("版本不一致，请更新版本")
-                need_update = True
-                exit(0)
-                continue
-            task_data = select_task(data["tasks"])
-            if task_data is None:
-                continue
-            task_id = task_data["task_id"]
-            task = task_data["task"]
-            result = client_helper.register_task(client_id, task_id)
-            if result["code"] == 0:
-                test_count += 1
-                start_time = time.time()
-                start_testing(task_id, task)
-            else:
-                no_waiting = True
-        except Exception as e:
-            print(repr(e))
+    tester.start_worker(mp.cpu_count())
+    thread_result_waiting = threading.Thread(target=result_waiting_loop)
+    thread_result_waiting.setDaemon(True)
+    thread_result_waiting.start()
+    task_manage_loop()
