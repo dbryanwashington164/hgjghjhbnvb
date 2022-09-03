@@ -133,7 +133,6 @@ class Tester():
             print(f"线程 {worker_id} 正在测试 {task['fen']} {'Red' if task['order'] == 0 else 'Black'}")
             try:
                 if not engine and not weight and not baseline_engine and not baseline_weight:
-                    self.need_exit = True
                     raise Exception("No engine or weight specified")
                 if not baseline_engine:
                     raise Exception("No baseline engine specified")
@@ -147,9 +146,14 @@ class Tester():
                     depth = None
                 if nodes is not None and nodes < 0:
                     nodes = None
-                if not os.path.exists(weight) or not os.path.exists(baseline_weight):
-                    print("Weight File Not Exist")
-                    return
+                if not os.path.exists(weight):
+                    raise Exception("Weight File Not Exist")
+                if not os.path.exists(engine):
+                    raise Exception("Engine File Not Exist")
+                if not os.path.exists(baseline_weight):
+                    raise Exception("Baseline Weight File Not Exist")
+                if not os.path.exists(baseline_engine):
+                    raise Exception("Baseline Engine File Not Exist")
                 if os.name != 'nt':
                     os.system(f"chmod +x {engine}")
                     os.system(f"chmod +x {baseline_engine}")
