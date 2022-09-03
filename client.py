@@ -196,6 +196,8 @@ def task_manage_loop():
         print("队列中任务不足，开始获取任务")
         data = client_helper.get_tasks(client_id)
         if data is None:
+            print("获取任务失败")
+            time.sleep(1)
             continue
         if "program_version" in data and data["program_version"] != program_version:
             print("版本不一致，请更新版本")
@@ -204,10 +206,13 @@ def task_manage_loop():
             continue
         task_data = select_task(data["tasks"])
         if task_data is None:
+            print("没有可用任务")
+            time.sleep(10)
             continue
         task_id = task_data["task_id"]
         task = task_data["task"]
         if task["type"] == "spsa":
+            print("注册 spsa 任务中")
             result = client_helper.register_task(client_id, task_id)
         else:
             result = {
