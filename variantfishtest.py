@@ -7,6 +7,7 @@ import stat_util
 import chess.uci
 import chessdb
 import logging
+import time
 
 
 RESULTS = [WIN, LOSS, DRAW] = range(3)
@@ -79,6 +80,7 @@ class EngineMatch:
         self.win_score_limit = -1
         self.draw_move_count = 0
         self.win_move_count = 0
+        self.info_handlers = []
 
         self.wt = None
         self.bt = None
@@ -133,7 +135,7 @@ class EngineMatch:
                 self.engines[-1].chess_db = True
         self.info_handlers = []
         for engine, options in zip(self.engines, self.engine_options):
-            engine.uci(True)
+            engine.uci(False)
             if self.config:
                 engine.setoption({"VariantPath": self.config})
             engine.setoption({"UCI_Variant": self.variant})
@@ -173,6 +175,7 @@ class EngineMatch:
             offset = 1
         output_count = 0
         move_count = 0
+        last_h = None
         while True:
             index = white if (len(self.bestmoves) + offset) % 2 == 0 else black
             e = self.engines[index]
@@ -182,6 +185,7 @@ class EngineMatch:
             if e.chess_db:
                 e.chess_db_pos = pos.replace("fen ", "") + " moves " + " ".join(self.bestmoves)
             bestmove, ponder = e.go(depth=self.depth, nodes=self.nodes, wtime=self.wt, btime=self.bt, winc=self.inc, binc=self.inc)
+            # print(time.time(), bestmove, ponder)
             move_count += 1
             if move_count > 400:
                 return DRAW
@@ -206,6 +210,7 @@ class EngineMatch:
                         return DRAW
                     # check for mate in 1
                     elif h.info["score"][1].mate == 1:
+                        # if last_h
                         return WIN if index == white else LOSS
                     elif self.draw_move_limit != -1 and abs(h.info["score"][1].cp) <= self.draw_score_limit:
                         self.draw_move_count += 1
@@ -235,6 +240,7 @@ class EngineMatch:
                             return WIN
                 else:
                     raise Exception("Engine does not return a score.\nMove list: " + " ".join(self.bestmoves))
+                last_h = h
             self.bestmoves.append(bestmove)
 
     def process_game(self, white, black, pos="startpos"):
