@@ -1,3 +1,4 @@
+import builtins
 import os.path
 import sys
 import time
@@ -20,6 +21,13 @@ last_output_time = time.time()
 task_queue = []
 tester: Tester = Tester()
 running = True
+NO_OUTPUT = True
+CPU_THREADS = mp.cpu_count()
+
+
+def print(*args, **kwargs):
+    if not NO_OUTPUT:
+        builtins.print(*args, **kwargs)
 
 
 def scan_existing_files():
@@ -115,8 +123,8 @@ def select_task(task_list):
     normal_tasks = []
     for item in task_list:
         task = item["task"]
-        if get_name(task["engine_url"]) in downloaded_file_list and \
-            get_name(task["weight_url"]) in downloaded_file_list and \
+        if (task["engine_url"] == "" or get_name(task["engine_url"]) in downloaded_file_list) and \
+                (task["weight_url"] == "" or get_name(task["weight_url"]) in downloaded_file_list) and \
                 get_name(task["baseline_engine_url"]) in downloaded_file_list and \
                 get_name(task["baseline_weight_url"]) in downloaded_file_list:
             downloaded_tasks.append(item)
@@ -169,19 +177,19 @@ def add_to_task(task_id, task):
     game_time = task['time_control'][0]
     nodes = task['nodes']
     if game_time >= 60:
-        num_games = mp.cpu_count()
+        num_games = CPU_THREADS
     elif game_time >= 30:
-        num_games = 2 * mp.cpu_count()
+        num_games = 2 * CPU_THREADS
     elif game_time >= 10:
-        num_games = 3 * mp.cpu_count()
+        num_games = 3 * CPU_THREADS
     elif game_time >= 5:
-        num_games = 6 * mp.cpu_count()
+        num_games = 6 * CPU_THREADS
     elif game_time >= 2.5:
-        num_games = 12 * mp.cpu_count()
+        num_games = 12 * CPU_THREADS
     elif game_time >= 1.25:
-        num_games = 24 * mp.cpu_count()
+        num_games = 24 * CPU_THREADS
     if 0 < depth <= 10 or 0 < nodes <= 50000:
-        num_games = 6 * mp.cpu_count()
+        num_games = 6 * CPU_THREADS
     if task["type"] == "spsa":
         num_games = task["num_games"]
     if num_games % 2 != 0:
@@ -202,7 +210,7 @@ def add_to_task(task_id, task):
 def task_manage_loop():
     global running, tester
     while running:
-        if len(tester.task_queue) >= mp.cpu_count():
+        if len(tester.task_queue) >= CPU_THREADS:
             time.sleep(0.2)
             continue
         print("队列中任务不足，开始获取任务")
@@ -253,6 +261,7 @@ def result_waiting_loop():
             results = tester.task_results[task_id]
             for fen in results:
                 result = results[fen]
+                print("Result of fen", fen, result)
                 if not result[0] or not result[1]:
                     continue
                 for i in range(2):
@@ -310,7 +319,7 @@ def result_waiting_loop():
                     print(f"版本不一致，请更新版本")
                     running = False
                 else:
-                    print(f"上传 {task_id} 结果成功")
+                    print(f"上传 {task_id} 结果:", result)
                 time.sleep(1)
         time.sleep(10)
 
@@ -320,7 +329,7 @@ if __name__ == "__main__":
     start_time = time.time()
     test_count = 0
     no_waiting = False
-    tester.start_worker(mp.cpu_count())
+    tester.start_worker(CPU_THREADS)
     thread_result_waiting = threading.Thread(target=result_waiting_loop)
     thread_result_waiting.setDaemon(True)
     thread_result_waiting.start()

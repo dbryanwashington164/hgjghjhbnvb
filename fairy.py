@@ -1,3 +1,4 @@
+import builtins
 import sys
 import os
 import threading
@@ -10,6 +11,14 @@ import traceback
 
 from stat_util import get_elo
 from variantfishtest import EngineMatch
+
+
+NO_OUTPUT = True
+
+
+def print(*args, **kwargs):
+    if not NO_OUTPUT:
+        builtins.print(*args, **kwargs)
 
 
 def get_latest_baseline():
@@ -184,7 +193,9 @@ class Tester():
                 task_id = task["task_id"]
                 order = task["order"]
                 match.init_game()
+                # print(f"Worker {worker_id} before process_game")
                 res = match.process_game(order, 1 - order, fen)
+                # print(f"Worker {worker_id} after process_game")
                 self.lock.acquire()
                 self.task_results[task_id][fen][order] = res
                 self.lock.release()
@@ -233,18 +244,30 @@ class Tester():
 if __name__ == "__main__":
     # print(get_elo((103,120,352)))
     tester = Tester()
-    tester.start_worker(2)
+    tester.start_worker(6)
+    # tester.add_task(
+    #     "test",
+    #     "xiangqi-xy.nnue",
+    #     "819.exe",
+    #     "xiangqi-xy.nnue",
+    #     "807.exe",
+    #     game_time=60000,
+    #     inc_time=600,
+    #     count=2
+    # )
     tester.add_task(
         "test",
-        "xiangqi-xy.nnue",
-        "819.exe",
-        "xiangqi-xy.nnue",
-        "807.exe",
-        depth=100,
-        count=6
+        "xiangqi-34ibow.nnue",
+        "engine_fce2hi",
+        "xiangqi-34ibow.nnue",
+        "engine_fce2hi",
+        game_time=30000,
+        inc_time=300,
+        count=4
     )
     while True:
         result_list = {}
+        print(tester.task_results)
         for task_id in list(tester.task_results):
             task_result = {
                 "task_id": task_id,
