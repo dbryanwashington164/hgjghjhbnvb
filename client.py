@@ -23,7 +23,7 @@ last_output_time = time.time()
 task_queue = []
 tester: Tester = Tester()
 running = True
-NO_OUTPUT = False
+NO_OUTPUT = True
 CPU_THREADS = mp.cpu_count()
 
 

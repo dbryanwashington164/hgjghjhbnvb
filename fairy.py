@@ -13,7 +13,7 @@ from stat_util import get_elo
 from variantfishtest import EngineMatch
 
 
-NO_OUTPUT = False
+NO_OUTPUT = True
 
 
 def print(*args, **kwargs):
