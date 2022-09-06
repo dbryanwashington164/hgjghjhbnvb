@@ -131,7 +131,6 @@ class EngineMatch:
             if not os.path.exists(path):
                 raise Exception("Path not exists: %s" % path)
             process = chess.uci.popen_engine(path)
-            print("Alive?", process.is_alive())
             self.engines.append(process)
             if "chessdb" in path:
                 self.engines[-1].chess_db = True
