@@ -1111,7 +1111,10 @@ class Engine(object):
             command.add_done_callback(async_callback)
             return command
         else:
-            return command.result(timeout=5)
+            if command == "uci":
+                return command.result(timeout=5)
+            else:
+                return command.result()
 
     def uci(self, async_callback=None):
         """

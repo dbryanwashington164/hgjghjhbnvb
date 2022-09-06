@@ -13,7 +13,7 @@ from stat_util import get_elo
 from variantfishtest import EngineMatch
 
 
-NO_OUTPUT = True
+NO_OUTPUT = False
 
 
 def print(*args, **kwargs):
@@ -53,6 +53,7 @@ class Tester():
         self.fens = []
         self.thread_list = []
         self.enable = True
+        self.abandon_list = []
 
         book_file = os.path.abspath(
             os.path.join(os.path.dirname(os.path.realpath(__file__)), "books", "xiangqi.epd"))
@@ -197,7 +198,8 @@ class Tester():
                 res = match.process_game(order, 1 - order, fen)
                 # print(f"Worker {worker_id} after process_game")
                 self.lock.acquire()
-                self.task_results[task_id][fen][order] = res
+                if task_id in self.task_results and fen in self.task_results[task_id]:
+                    self.task_results[task_id][fen][order] = res
                 self.lock.release()
                 for i in range(2):
                     match.engines[i].process.kill()
@@ -206,13 +208,22 @@ class Tester():
                 print(f"{len(self.task_queue)} tasks left")
             except Exception as e:
                 task["error_count"] += 1
-                if task["error_count"] <= 3:
+                if task["error_count"] <= 5:
                     self.lock.acquire()
                     self.task_queue.insert(0, task)
                     self.lock.release()
                     print(f"Worker {worker_id}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Error: {repr(e)}")
                     print("Insert task to queue")
                 else:
+                    self.lock.acquire()
+                    for t in self.task_queue.copy():
+                        if t["task_id"] == task["task_id"] and t["fen"] == task["fen"]:
+                            self.task_queue.remove(t)
+                    self.abandon_list.append({
+                        "task_id": task["task_id"],
+                        "fen": task["fen"],
+                    })
+                    self.lock.release()
                     print(f"Worker {worker_id}|{weight}@{engine} vs {baseline_weight}@{baseline_engine} Failed: {repr(e)}")
                     print(f"{len(self.task_queue)} tasks left")
 
@@ -245,51 +256,52 @@ if __name__ == "__main__":
     # print(get_elo((103,120,352)))
     tester = Tester()
     tester.start_worker(6)
-    # tester.add_task(
-    #     "test",
-    #     "xiangqi-xy.nnue",
-    #     "819.exe",
-    #     "xiangqi-xy.nnue",
-    #     "807.exe",
-    #     game_time=60000,
-    #     inc_time=600,
-    #     count=2
-    # )
     tester.add_task(
         "test",
-        "xiangqi-34ibow.nnue",
-        "engine_fce2hi",
-        "xiangqi-34ibow.nnue",
-        "engine_fce2hi",
-        game_time=30000,
-        inc_time=300,
-        count=4
+        "xiangqi-xy.nnue",
+        "819.exe",
+        "xiangqi-xy.nnue",
+        "807.exe",
+        game_time=60000,
+        inc_time=600,
+        count=6
     )
+    # tester.add_task(
+    #     "test",
+    #     "xiangqi-34ibow.nnue",
+    #     "engine_fce2hi",
+    #     "xiangqi-34ibow.nnue",
+    #     "engine_fce2hi",
+    #     game_time=30000,
+    #     inc_time=300,
+    #     count=4
+    # )
     while True:
         result_list = {}
         print(tester.task_results)
         for task_id in list(tester.task_results):
             task_result = {
                 "task_id": task_id,
-                "win": 0,
-                "lose": 0,
-                "draw": 0,
+                "wdl": [0, 0, 0],
                 "ptnml": [0, 0, 0, 0, 0],
                 "fwdl": [0, 0, 0],
             }
+            done_fens = []
             results = tester.task_results[task_id]
             for fen in results:
                 result = results[fen]
+                print("Result of fen", fen, result)
                 if not result[0] or not result[1]:
                     continue
+                done_fens.append(fen)
                 for i in range(2):
                     res = result[i]
                     if res == "win":
-                        task_result["win"] += 1
+                        task_result["wdl"][0] += 1
                     elif res == "lose":
-                        task_result["lose"] += 1
+                        task_result["wdl"][2] += 1
                     elif res == "draw":
-                        task_result["draw"] += 1
+                        task_result["wdl"][1] += 1
                     if i == 0:
                         if res == "win":
                             task_result["fwdl"][0] += 1
@@ -315,12 +327,18 @@ if __name__ == "__main__":
                     task_result["ptnml"][4] += 1
                 else:
                     print(f"Err res:{res} first_result:{first_result}")
-            if task_result["win"] + task_result["draw"] + task_result["lose"] > 0:
-                tester.lock.acquire()
+            if sum(task_result["wdl"]) > 0:
                 print(task_result)
                 if task_id not in result_list:
-                    result_list[task_id] = []
-                result_list[task_id].append(task_result)
-                tester.task_results[task_id].pop(fen)
+                    result_list[task_id] = task_result
+                else:
+                    for i in range(3):
+                        result_list[task_id]["wdl"][i] += task_result["wdl"][i]
+                        result_list[task_id]["fwdl"][i] += task_result["fwdl"][i]
+                    for i in range(5):
+                        result_list[task_id]["ptnml"][i] += task_result["ptnml"][i]
+                tester.lock.acquire()
+                for fen in done_fens:
+                    tester.task_results[task_id].pop(fen)
                 tester.lock.release()
         time.sleep(1)

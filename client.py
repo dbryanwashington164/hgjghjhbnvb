@@ -4,6 +4,8 @@ import sys
 import time
 import threading
 import random
+import traceback
+
 from fairy import Tester
 import client_helper
 import multiprocessing as mp
@@ -21,7 +23,7 @@ last_output_time = time.time()
 task_queue = []
 tester: Tester = Tester()
 running = True
-NO_OUTPUT = True
+NO_OUTPUT = False
 CPU_THREADS = mp.cpu_count()
 
 
@@ -250,77 +252,92 @@ def task_manage_loop():
 def result_waiting_loop():
     global running
     while running:
-        result_list = {}
-        for task_id in list(tester.task_results):
-            task_result = {
-                "task_id": task_id,
-                "wdl": [0, 0, 0],
-                "ptnml": [0, 0, 0, 0, 0],
-                "fwdl": [0, 0, 0],
-            }
-            results = tester.task_results[task_id]
-            for fen in results:
-                result = results[fen]
-                print("Result of fen", fen, result)
-                if not result[0] or not result[1]:
-                    continue
-                for i in range(2):
-                    res = result[i]
-                    if res == "win":
-                        task_result["wdl"][0] += 1
-                    elif res == "lose":
-                        task_result["wdl"][2] += 1
-                    elif res == "draw":
-                        task_result["wdl"][1] += 1
-                    if i == 0:
+        try:
+            result_list = {}
+            tester.lock.acquire()
+            if len(tester.abandon_list) > 0:
+                for item in tester.abandon_list.copy():
+                    if item["task_id"] in tester.task_results and item["fen"] in tester.task_results[item["task_id"]]:
+                        del tester.task_results[item["task_id"]][item["fen"]]
+                        if len(tester.task_results[item["task_id"]]) == 0:
+                            del tester.task_results[item["task_id"]]
+                tester.abandon_list = []
+            tester.lock.release()
+            for task_id in list(tester.task_results):
+                task_result = {
+                    "task_id": task_id,
+                    "wdl": [0, 0, 0],
+                    "ptnml": [0, 0, 0, 0, 0],
+                    "fwdl": [0, 0, 0],
+                }
+                done_fens = []
+                results = tester.task_results[task_id]
+                for fen in results:
+                    result = results[fen]
+                    if not result[0] or not result[1]:
+                        continue
+                    done_fens.append(fen)
+                    for i in range(2):
+                        res = result[i]
                         if res == "win":
-                            task_result["fwdl"][0] += 1
+                            task_result["wdl"][0] += 1
                         elif res == "lose":
-                            task_result["fwdl"][2] += 1
+                            task_result["wdl"][2] += 1
                         elif res == "draw":
-                            task_result["fwdl"][1] += 1
-                res = result[1]
-                first_result = result[0]
-                if res == "lose" and first_result == "lose":
-                    task_result["ptnml"][0] += 1
-                elif res == "lose" and first_result == "draw" or \
-                        res == "draw" and first_result == "lose":
-                    task_result["ptnml"][1] += 1
-                elif res == "draw" and first_result == "draw" or \
-                        res == "win" and first_result == "lose" or \
-                        res == "lose" and first_result == "win":
-                    task_result["ptnml"][2] += 1
-                elif res == "win" and first_result == "draw" or \
-                        res == "draw" and first_result == "win":
-                    task_result["ptnml"][3] += 1
-                elif res == "win" and first_result == "win":
-                    task_result["ptnml"][4] += 1
-                else:
-                    print(f"Err res:{res} first_result:{first_result}")
-            if sum(task_result["wdl"]) > 0:
-                print(task_result)
-                if task_id not in result_list:
-                    result_list[task_id] = task_result
-                else:
-                    for i in range(3):
-                        result_list[task_id]["wdl"][i] += task_result["wdl"][i]
-                        result_list[task_id]["fwdl"][i] += task_result["fwdl"][i]
-                    for i in range(5):
-                        result_list[task_id]["ptnml"][i] += task_result["ptnml"][i]
-                tester.lock.acquire()
-                tester.task_results[task_id].pop(fen)
-                tester.lock.release()
+                            task_result["wdl"][1] += 1
+                        if i == 0:
+                            if res == "win":
+                                task_result["fwdl"][0] += 1
+                            elif res == "lose":
+                                task_result["fwdl"][2] += 1
+                            elif res == "draw":
+                                task_result["fwdl"][1] += 1
+                    res = result[1]
+                    first_result = result[0]
+                    if res == "lose" and first_result == "lose":
+                        task_result["ptnml"][0] += 1
+                    elif res == "lose" and first_result == "draw" or \
+                            res == "draw" and first_result == "lose":
+                        task_result["ptnml"][1] += 1
+                    elif res == "draw" and first_result == "draw" or \
+                            res == "win" and first_result == "lose" or \
+                            res == "lose" and first_result == "win":
+                        task_result["ptnml"][2] += 1
+                    elif res == "win" and first_result == "draw" or \
+                            res == "draw" and first_result == "win":
+                        task_result["ptnml"][3] += 1
+                    elif res == "win" and first_result == "win":
+                        task_result["ptnml"][4] += 1
+                    else:
+                        print(f"Err res:{res} first_result:{first_result}")
+                if sum(task_result["wdl"]) > 0:
+                    if task_id not in result_list:
+                        result_list[task_id] = task_result
+                    else:
+                        for i in range(3):
+                            result_list[task_id]["wdl"][i] += task_result["wdl"][i]
+                            result_list[task_id]["fwdl"][i] += task_result["fwdl"][i]
+                        for i in range(5):
+                            result_list[task_id]["ptnml"][i] += task_result["ptnml"][i]
+                    tester.lock.acquire()
+                    for fen in done_fens:
+                        tester.task_results[task_id].pop(fen)
+                    tester.lock.release()
 
-        if len(result_list) > 0:
-            for task_id in list(result_list):
-                result = result_list[task_id]
-                result = client_helper.upload_result(task_id, program_version, result["wdl"], result["fwdl"], result["ptnml"])
-                if result == "ver":
-                    print(f"版本不一致，请更新版本")
-                    running = False
-                else:
-                    print(f"上传 {task_id} 结果:", result)
-                time.sleep(1)
+            if len(result_list) > 0:
+                for task_id in list(result_list):
+                    result = result_list[task_id]
+                    result = client_helper.upload_result(task_id, program_version, result["wdl"], result["fwdl"],
+                                                         result["ptnml"])
+                    if result == "ver":
+                        print(f"版本不一致，请更新版本")
+                        running = False
+                    else:
+                        print(f"上传 {task_id} 结果:", result)
+                    time.sleep(1)
+        except Exception as e:
+            print("Error in result_waiting_loop:", repr(e))
+            traceback.print_exc()
         time.sleep(10)
 
 

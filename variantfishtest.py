@@ -130,16 +130,18 @@ class EngineMatch:
         for path in self.engine_paths:
             if not os.path.exists(path):
                 raise Exception("Path not exists: %s" % path)
-            self.engines.append(chess.uci.popen_engine(path))
+            process = chess.uci.popen_engine(path)
+            print("Alive?", process.is_alive())
+            self.engines.append(process)
             if "chessdb" in path:
                 self.engines[-1].chess_db = True
         self.info_handlers = []
         for engine, options in zip(self.engines, self.engine_options):
-            engine.uci(False)
+            engine.uci(async_callback=False)
             if self.config:
-                engine.setoption({"VariantPath": self.config})
-            engine.setoption({"UCI_Variant": self.variant})
-            engine.setoption(options)
+                engine.setoption({"VariantPath": self.config}, async_callback=False)
+            engine.setoption({"UCI_Variant": self.variant}, async_callback=False)
+            engine.setoption(options, async_callback=False)
 
             self.info_handlers.append(chess.uci.InfoHandler())
             engine.info_handlers.append(self.info_handlers[-1])
