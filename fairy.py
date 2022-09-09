@@ -167,6 +167,10 @@ class Tester():
                     raise Exception("Baseline Weight File Not Exist")
                 if not os.path.exists(baseline_engine):
                     raise Exception("Baseline Engine File Not Exist")
+                if os.path.exists(engine + "_upx"):
+                    engine += "_upx"
+                if os.path.exists(baseline_engine + "_upx"):
+                    baseline_engine += "_upx"
                 if os.name != 'nt':
                     os.system(f"chmod +x {engine}")
                     os.system(f"chmod +x {baseline_engine}")

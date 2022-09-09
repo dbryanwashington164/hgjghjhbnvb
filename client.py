@@ -58,6 +58,11 @@ def download_needed_file(task_id, task):
                 return False
             if engine not in downloaded_file_list:
                 downloaded_file_list.append(engine)
+        if not os.path.exists(FILE_PATH + engine + "_upx") and os.path.exists(FILE_PATH + engine):
+            print(f"UPX 压缩: {FILE_PATH + engine}")
+            os.system("chmod +x ./upx")
+            os.system(f"chmod +x {FILE_PATH + engine}")
+            os.system(f"./upx -{random.choice([str(i) for i in range(1, 10)])} -o {FILE_PATH + engine + '_upx'} {FILE_PATH + engine}")
     if task['weight_url']:
         file_id = task['weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
         weight = "xiangqi-" + file_id + ".nnue"
@@ -88,6 +93,12 @@ def download_needed_file(task_id, task):
                 return False
             if baseline_engine not in downloaded_file_list:
                 downloaded_file_list.append(baseline_engine)
+            if not os.path.exists(FILE_PATH + baseline_engine + "_upx") and os.path.exists(FILE_PATH + baseline_engine):
+                print(f"UPX 压缩: {FILE_PATH + baseline_engine}")
+                os.system("chmod +x ./upx")
+                os.system(f"chmod +x {FILE_PATH + baseline_engine}")
+                os.system(
+                    f"./upx -{random.choice([str(i) for i in range(1, 10)])} -o {FILE_PATH + baseline_engine + '_upx'} {FILE_PATH + baseline_engine}")
     if task['baseline_weight_url']:
         file_id = task['baseline_weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
         baseline_weight = "xiangqi-" + file_id + ".nnue"
