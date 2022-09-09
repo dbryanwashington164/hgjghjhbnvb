@@ -255,16 +255,16 @@ class Tester():
 if __name__ == "__main__":
     # print(get_elo((103,120,352)))
     tester = Tester()
-    tester.start_worker(6)
+    tester.start_worker(2)
     tester.add_task(
         "test",
-        "xiangqi-xy.nnue",
-        "819.exe",
-        "xiangqi-xy.nnue",
-        "807.exe",
-        game_time=60000,
-        inc_time=600,
-        count=6
+        "./files/xiangqi-34ibow.nnue",
+        "./files/pkf.exe",
+        "./files/xiangqi-34ibow.nnue",
+        "./files/pkf.exe",
+        game_time=10000,
+        inc_time=100,
+        count=2
     )
     # tester.add_task(
     #     "test",

@@ -25,6 +25,7 @@ tester: Tester = Tester()
 running = True
 NO_OUTPUT = True
 CPU_THREADS = mp.cpu_count()
+FILE_PATH = "./files/"
 
 
 def print(*args, **kwargs):
@@ -35,7 +36,7 @@ def print(*args, **kwargs):
 def scan_existing_files():
     global downloaded_file_list
     downloaded_file_list = []
-    for file in os.listdir("./"):
+    for file in os.listdir("./files/"):
         if file.startswith("engine") or file.endswith(".nnue"):
             if os.path.getsize(file) > 1024 * 100 and file not in downloaded_file_list:
                 downloaded_file_list.append(file)
@@ -47,11 +48,11 @@ def download_needed_file(task_id, task):
         engine = "engine_" + file_id
         if engine not in downloaded_file_list:
             print(f"下载引擎: {task['engine_url']}")
-            result = client_helper.download_file_with_trail(task['engine_url'], engine)
+            result = client_helper.download_file_with_trail(task['engine_url'], FILE_PATH + engine)
             print(f"下载结果: {result}")
             if not result:
                 return False
-            if os.path.getsize(engine) < 1024 * 100:
+            if os.path.getsize(FILE_PATH + engine) < 1024 * 100:
                 print("引擎文件错误")
                 print("可能是网盘超限，等待")
                 return False
@@ -62,11 +63,11 @@ def download_needed_file(task_id, task):
         weight = "xiangqi-" + file_id + ".nnue"
         if weight not in downloaded_file_list:
             print(f"下载权重: {task['weight_url']}")
-            result = client_helper.download_file_with_trail(task['weight_url'], weight)
+            result = client_helper.download_file_with_trail(task['weight_url'], FILE_PATH + weight)
             print(f"下载结果: {result}")
             if not result:
                 return False
-            if os.path.getsize(weight) < 1024 * 100:
+            if os.path.getsize(FILE_PATH + weight) < 1024 * 100:
                 print("权重文件错误")
                 print("可能是网盘超限，等待")
                 return False
@@ -77,11 +78,11 @@ def download_needed_file(task_id, task):
         baseline_engine = "engine_" + file_id
         if baseline_engine not in downloaded_file_list:
             print(f"下载基准引擎: {task['baseline_engine_url']}")
-            result = client_helper.download_file_with_trail(task['baseline_engine_url'], baseline_engine)
+            result = client_helper.download_file_with_trail(task['baseline_engine_url'], FILE_PATH + baseline_engine)
             print(f"下载结果: {result}")
             if not result:
                 return False
-            if os.path.getsize(baseline_engine) < 1024 * 100:
+            if os.path.getsize(FILE_PATH + baseline_engine) < 1024 * 100:
                 print("基准引擎文件错误")
                 print("可能是网盘超限，等待")
                 return False
@@ -92,11 +93,11 @@ def download_needed_file(task_id, task):
         baseline_weight = "xiangqi-" + file_id + ".nnue"
         if baseline_weight not in downloaded_file_list:
             print(f"下载基准权重: {task['baseline_weight_url']}")
-            result = client_helper.download_file_with_trail(task['baseline_weight_url'], baseline_weight)
+            result = client_helper.download_file_with_trail(task['baseline_weight_url'], FILE_PATH + baseline_weight)
             print(f"下载结果: {result}")
             if not result:
                 return False
-            if os.path.getsize(baseline_weight) < 1024 * 100:
+            if os.path.getsize(FILE_PATH + baseline_weight) < 1024 * 100:
                 print("基准权重文件错误")
                 print("可能是网盘超限，等待")
                 return False
@@ -149,22 +150,22 @@ def select_task(task_list):
 def add_to_task(task_id, task):
     if task['engine_url']:
         file_id = task['engine_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
-        engine = "engine_" + file_id
+        engine = FILE_PATH + "engine_" + file_id
     else:
         engine = ""
     if task["weight_url"]:
         file_id = task['weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
-        weight = "xiangqi-" + file_id + ".nnue"
+        weight = FILE_PATH + "xiangqi-" + file_id + ".nnue"
     else:
         weight = ""
     if task["baseline_engine_url"]:
         file_id = task['baseline_engine_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
-        baseline_engine = "engine_" + file_id
+        baseline_engine = FILE_PATH + "engine_" + file_id
     else:
         baseline_engine = ""
     if task["baseline_weight_url"]:
         file_id = task['baseline_weight_url'].split("/")[-1].split(".")[0].split("_")[-1].strip("_")
-        baseline_weight = "xiangqi-" + file_id + ".nnue"
+        baseline_weight = FILE_PATH + "xiangqi-" + file_id + ".nnue"
     else:
         baseline_weight = ""
 
