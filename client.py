@@ -36,9 +36,9 @@ def print(*args, **kwargs):
 def scan_existing_files():
     global downloaded_file_list
     downloaded_file_list = []
-    for file in os.listdir("./files/"):
+    for file in os.listdir(FILE_PATH):
         if file.startswith("engine") or file.endswith(".nnue"):
-            if os.path.getsize(file) > 1024 * 100 and file not in downloaded_file_list:
+            if os.path.getsize(FILE_PATH + file) > 1024 * 100 and file not in downloaded_file_list:
                 downloaded_file_list.append(file)
 
 
