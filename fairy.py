@@ -67,9 +67,12 @@ class Tester():
                    game_time=10000, inc_time=100, hash=256, thread_count=2, uci_ops=None, baseline_uci_ops=None,
                    draw_move_limit=-1, draw_score_limit=-1, win_move_limit=-1, win_score_limit=-1, count=6):
         fens = random.sample(self.fens, count // 2)
-        self.task_results[task_id] = {}
+        if task_id not in self.task_results:
+            self.task_results[task_id] = {}
         for fen in fens:
             fen = "fen " + fen
+            if fen in self.task_results[task_id]:
+                continue
             for order in range(2):
                 self.task_queue.append({
                     "task_id": task_id,
